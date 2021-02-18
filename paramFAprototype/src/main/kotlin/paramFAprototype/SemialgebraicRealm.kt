@@ -286,11 +286,55 @@ class Interval( left: NumQ, leftClosed: Boolean, leftInf: Boolean,
     }
 }
 
+//helper class intersection
+class IntersectionOfListAndInterval(@JvmField var listI : MutableList<Interval>, @JvmField var interval: Interval){
+        @JvmField var foundFirst = false
+        @JvmFiled var firstIndex : Int = -1
+        @JvmField var firstIntersecting : Interval
+        @JvmField var lastIntersecting : Interval
+        @JvmField var intersectingList : MutableList<Interval> = MutableList<Interval>(0)
+        init{        
+            for( i  in range(0,this.listI.size() ) {
+                if( listI[i].hasNonemptyIntersectionWith( i )){
+                    if( foundFirst == false ){
+                        foundFirst = true
+                        firstIndex = i
+                        firstIntersecting = listI[i]
+                        lastIntersecting = listI[i]
+                    }
+                    if( firstIndex < i) intersectingList.add(listI[i]
+                    //compare the right side of the "old" and "possibly new" 
+                    //last intersecting interval
+                    if( ( lastIntersecting.compareRight( listI[i] ) < 0 )
+                        || ( lastIntersecting.compareRight( listI[i] ) == 0 ) && listI[i].isRClo() )
+                        lastIntersecting = listI[i] //maybe a point more or equal to current
+                }                     
+            }
+        }
+        
+        fun getIntersectingList() : MutableList<Interval>{
+            return this.intersectingList
+        }
+        fun getFirstIntersectingInterval() : Interval{
+            return this.firstIntersecting
+        }
+        fun getLastIntersectingInterval(){
+            return this.lastIntersecting
+        }
+        fun isFoundFirst() : Boolean{
+            return this.foundFirst
+        }
+        fun getFirstIndex() : Int{
+            return this.firstIndex
+        }
+        
+    }
+
 //class sorted list of intervals
 //methods:
 //(removeEmptyIntervals)
 //intersectWith(interval), intersectWith(list of intervals)
-//uniteWith(interval), uniteWith(list of intervals)
+//    uniteWith(interval), uniteWith(list of intervals)...add
 //complement = complementary list of intervals
 //sort by left point, (sort by right point)
 //merge the overlapping neighbours
@@ -324,20 +368,48 @@ class SortedListOfDisjunctIntervals( @JVMField var intervals : MutableList<Inter
     }
     
     fun add( interval : Interval ){
-        for( i  in range(0,this.intervals.size() ) {
-            var foundFirst = false
-            if( intervals[i].hasNonemptyIntersectionWith( i )){
-                if( foundFirst == false ){
-                    foundFirst = true
-                    firstIntersecting = intervals[i]
-                }
-                lastIntersecting = intervals[i]
-                newInterval = interval.intersectWith( i )
-                
+        val iL = IntersectingList(this.intervals, interval)
+        
+        if(iL.getFoundFirst()){
+            //there is a list of intersecting intervals that have to be replaced by one
+            //possibly bigger than the new added interval
+            var left : NumQ = iL.getFirstIntersecting.getLe()
+            var right : NumQ = iL.getLastIntersecting.getRi()
+            var leftCl : Boolean = iL.getFirstIntersecting.isLClo()
+            var rightCl : Boolean = iL.getLastIntersecting.isRClo()
+            var leftInf : Boolean = iL.getFirstIntersecting.isLInf()
+            var rightInf : Boolean = iL.getLastIntersecting.isRInf()
+            if( interval.compareLeft( firstIntersecting) < 0 ){
+                left = interval.getLe()
+                leftCl = interval.isLClo()
+                leftInf = interval.isLInf()  
             }
+            if( interval.compareRight(lastIntersecting) > 0 ){
+                right = interval.getRi()
+                rightCl = interval.isRClo()
+                rightInf = interval.isRInf()    
+            }
+            //all intersecting intervals but the first one out
+            this.intervals.remove_all(iL.getIntersectingList())
+            //replace the first one
+            this.intervals[iL.getFirstIndex()] = Interval( left, leftCl, leftInf, right, rightCl, rightInf )
+        } else {//old intervals have no intersection with new interval
+            this.intervals.add( interval )
         }    
     }
 
+    fun intersectWithInterval(interval : Interval){
+        val iL = IntersectingList(this.intervals, interval)
+        //trim first and last interval in the returned (assuming disjoint sorted) list
+        var returnedList = iL.getIntersectingList()
+        returnedList[0] = returnedList[0].intersectWith( interval )
+        returnedList[returnedList.size-1] = returnedList[returnedList.size-1].intersectWith( interval )
+        this.intervals.retainAll(returnedList)//delete the rest
+    }
     
+    //subsequently intersect  intersecting parts with intervals from oth
+    fun intersectWithOtherDisjunctList( oth : SorterdListOfDisjunctIntervals){
+        
+    }
 }
-*/
+
