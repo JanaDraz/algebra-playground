@@ -41,15 +41,77 @@ fun digResultFromReduceOutput(output1: List<String>): String {
         resultAll += it+"\n"
         i1++
     }
-    return "$resultPart"// Whole result: $resultAll"
+    //return "$resultPart" .. for the Quantifier elimination
+    return "Whole result: $resultAll" //...for rootfinding
 }
 
-fun getResultFromReduce(commandsForReduce: ArrayList<String>): String {
+fun getResultFromReduce(commandsForReduce: ArrayList<String>): List<String> {
     val tempFile = File.createTempFile("input", ".txt")
     tempFile.writeText(commandsForReduce.joinToString(separator = "\n"))
     val process = Runtime.getRuntime().exec(arrayOf("/home/jfabriko/PROGRAMOVANI/reduce-algebra/bin/call_reduce_with_input.sh",
         tempFile.absolutePath))
     val output1 = process.inputStream.bufferedReader().readLines()
 
-    return digResultFromReduceOutput(output1)
+    return output1 //digResultFromReduceOutput(output1)
+}
+
+fun parseRootsFromReduceOutput( output : List<String> ): List<NumQ> {
+    var rootList : List<NumQ> = listOf<NumQ>()//empty at first
+    var rootLine : String = "~"
+    //identify the line with $ character
+    for( line in output ) {
+        if( line.contains("\$") ) rootLine = line
+    }
+    //parse roots if any
+    if( !rootLine.contains("~") ) {
+        if( rootLine.contains("{}$") ){
+            return rootList //empty list, zero polynomial
+        }else{
+        //there are some roots "{x = 0,x = i,x =  - i}$"
+            rootLine = rootLine.filter({c -> !(c.isWhitespace())}) //"{x=0,x=i,x=-i}$"
+            val start = rootLine.indexOf('{')+1
+            val end = rootLine.indexOf('}')
+            rootLine = rootLine.substring( start, end ) //"x=0,x=i,x=-i"
+            var rootStrs = rootLine.split(",") //"x=0","x=i","x=-i"
+            for( rs in rootStrs){//"x=0" 
+                val rsParts = rs.split("=") //"x","0"
+                if( !rsParts[1].contains("i") ) {//real roots, not complex
+                    rootList += listOf( strToQ( rsParts[1] ) ) //"0" -> QZERO
+                }
+            }
+        } 
+    }
+    
+    return rootList
+}
+
+/* get the roots of a polynomial by reduce
+ * sort the roots from smallest to largest
+ * assuming the string argument is a univariate polynomial over Q
+ */
+fun getRoots( polyn : String ) :  List<NumQ> {
+    var resultList : List<NumQ> = listOf()
+    var strList : List<String> = listOf()
+    
+    val command = ArrayList<String>().apply {
+        add("load_package redlog;")
+        add("rlset reals;")
+        add("off rlverbose;")
+        add("off nat;")         //add("on rounded;")?
+        add("root_val($polyn);")
+        add("quit;")
+    }
+    
+    val reduceOutput : List<String> = getResultFromReduce( command )
+    println( reduceOutput )
+    
+    resultList = parseRootsFromReduceOutput( reduceOutput )
+    
+    //TODO what form, how to parse
+    //{root,root,rootC, rootR?} ... N roots, some of them complex
+    //we need just the R(namely Q in decimal form) ones, 
+    //parse the root list from reduce output
+    //convert the Q numbers to NumQ
+    
+    return resultList
 }
