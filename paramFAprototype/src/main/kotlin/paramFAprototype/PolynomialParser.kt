@@ -44,7 +44,7 @@ fun strToQ(number : String) : NumQ {
  * parse the term vars^k_i into a polynomial representation
  */
 fun stringTermToMPolyInQ(term : String, vars : Array<String>) : MPolyInQ {
-    val mvQCoder = Rings.MultivariateRingQ(vars.size).mkCoder(*vars)//[0],vars)//vars.flatten())//vars[0],vars[1])
+    val mvQCoder = Rings.MultivariateRingQ(vars.size).mkCoder(*vars)
     return mvQCoder.parse(term)
 }
 
@@ -130,4 +130,14 @@ fun strToMPolyInQ(poly : String, vars : Array<String>) : MPolyInQ{
  fun strToUPolyInZ(poly : String, variable : String) : UPolyInZ{
     val uvZCoder = Rings.UnivariateRingZ.mkCoder(variable)
     return uvZCoder.parse(poly)
+}
+
+/*
+ * Read a univariate polynomial with Q coefficients and 
+ * given variable string from string (where the polynomial
+ * is written with coefficients in Z).
+ */
+ fun strToUPolyInQ(poly : String, variable : String) : UPolyInQ{
+    val uvQCoder = Rings.UnivariateRingQ.mkCoder(variable)
+    return uvQCoder.parse(poly)
 }
