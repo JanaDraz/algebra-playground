@@ -20,56 +20,11 @@ class App {
 }
 
 fun main(args: Array<String>) {
-    // parse some minimal polynomial from string
-    val minimalPoly : UPolyInQ  = UnivariatePolynomial.parse("x^3 - 5", Q, "x")
-
-    val mv2p1QCoder = Rings.MultivariateRingQ(3).mkCoder("x", "y", "p")
- 
-    val derx = mv2p1QCoder.parse("x+1")
-    val dery = mv2p1QCoder.parse("y+p")
+    val polynoms : List<String> = listOf("x^2+1","x+1","x^3+x","0","p^2-p-2","2*x+1")
     
-    //println(derx)
-    //println(derx.evaluate(1,0))
+    for( pol in polynoms )
+        println( getRoots( pol ) )//will print out the result
     
-    val varindices : IntArray = IntArray(3, {i -> i})
-
-    val varvalues : Array<MPolyInQ> = arrayOf( mv2p1QCoder.parse("2*x"),
-                             mv2p1QCoder.parse("y+2"),
-                             mv2p1QCoder.parse("1") )
-    val value0 = MPolyInQ.parse("2*x", "x","y","p")
-    val value1 = MPolyInQ.parse("y+2", "x","y","p")
-    //val derxsubstituted = derx.composition(0, value0).composition(1,value1)
-    //println(derxsubstituted)
-    
-    //println(dery.composition(varindices, varvalues))//...tohle uz jede:D
-    
-    //jak dostat Q (racionalni) konstanty do polynomu?
-    val a : BigInteger = BigInteger.valueOf(2)
-    val b : BigInteger = BigInteger.valueOf(3)
-    
-    val racconst = NumQ(Q.ring, BigInteger.valueOf(141), BigInteger.valueOf(100))
-    //println(racconst)
-    
-    //konecna desetinna cisla do racionalnich
-    //println(strToQ("12"))
-    //println(strToQ("12.3"))
-    
-     val vars = arrayOf("x","y","p")
-    val nactipolynom = strToMPolyInQ("-2*x-3.5*y^3*p^2+4.5", vars )
-    
-    //trying out simple reduce commands
-    val formula1 = "ex(x,(x+p <= 0))"
-    //println(formula1)
-    //println( getResultFromReduce( createReduceCommandsForFormula( formula1 )))
-    
-     val polynA = mv2p1QCoder.parse("2/3*x+3/100")
-     //println(polynA.toString())
-    // println(polynA.cc().toString())
-     
-     println("-2*x-3.5*y^3*p^2+4.5")
-     println(nactipolynom)
-     println(nactipolynom.toString(*vars))
-     
     //print hello world
-    println(App().greeting)
+    println( App().greeting )
 }
