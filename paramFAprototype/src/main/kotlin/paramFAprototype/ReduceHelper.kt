@@ -17,7 +17,6 @@ fun createReduceCommandsForFormula(formula: String): ArrayList<String> {
     return command
 }
 
-
 /*
  Join all the lines of the output, return them
 x Assuming the 14th line in the output of reduce is the result (we only init reduce, set the formula and call rlqe)
@@ -41,8 +40,8 @@ fun digResultFromReduceOutput(output1: List<String>): String {
         resultAll += it+"\n"
         i1++
     }
-    //return "$resultPart" .. for the Quantifier elimination
-    return "Whole result: $resultAll" //...for rootfinding
+    
+    return "$resultPart \nWhole result: $resultAll" //trying to find the relevant qel part
 }
 
 fun getResultFromReduce(commandsForReduce: ArrayList<String>): List<String> {
@@ -53,6 +52,18 @@ fun getResultFromReduce(commandsForReduce: ArrayList<String>): List<String> {
     val output1 = process.inputStream.bufferedReader().readLines()
 
     return output1 //digResultFromReduceOutput(output1)
+}
+
+/* If the commands contain "off nat" it should produce the output on a
+ * line (or more lines string) ended with "$"...?
+ */
+fun parseQelResultFromReduceOutput( output : List<String> ) : String {
+    return "~~"
+}
+
+
+fun getQelResultForFormula( formula : String ) : String {
+    return parseQelResultFromReduceOutput( getResultFromReduce( createReduceCommandsForFormula( formula ) ) )
 }
 
 fun parseRootsFromReduceOutput( output : List<String> ): List<NumQ> {
@@ -106,12 +117,6 @@ fun getRoots( polyn : String ) :  List<NumQ> {
     println( reduceOutput )
     
     resultList = parseRootsFromReduceOutput( reduceOutput )
-    
-    //TODO what form, how to parse
-    //{root,root,rootC, rootR?} ... N roots, some of them complex
-    //we need just the R(namely Q in decimal form) ones, 
-    //parse the root list from reduce output
-    //convert the Q numbers to NumQ
     
     return resultList
 }
