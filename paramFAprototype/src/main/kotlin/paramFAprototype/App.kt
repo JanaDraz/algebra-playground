@@ -24,6 +24,11 @@ fun main(args: Array<String>) {
     
     for( pol in polynoms )
         println( getRoots( pol ) )//will print out the result
+        
+    var example1 : BioSystem = getBioSystemByName( "001" )
+    
+    var parSet : SortedListOfDisjunctIntervals = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0), arrayOf(1,0) ), example1, 1 )
+    println( parSet.getIntervals() )
     
     //print hello world
     println( App().greeting )
