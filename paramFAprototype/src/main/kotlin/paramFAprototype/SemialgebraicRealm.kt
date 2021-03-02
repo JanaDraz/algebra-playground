@@ -481,22 +481,32 @@ class SortedListOfDisjunctIntervals( @JvmField var intervals : MutableList<Inter
 }
 
 /* semiToIntervals : list Interval
+ * formula = semialgebraic formula in dnf, nonquantified, for parameters
+ * false -> (0,0) notinf, notinf ...  empty list, no interval
+ * true -> (0,0) Inf, Inf ... list of one interval
  */
 fun semiToIntervals( formula : String, varStr : String ) : SortedListOfDisjunctIntervals {
-    val listOfAlternatives : List<String> = divideSemiByOR( formula )
     var resultList = SortedListOfDisjunctIntervals( mutableListOf<Interval>() )
     
-    for( alt in listOfAlternatives) {
-        val listOfConjuncts : List<String> = divideSemiByAND( alt )
-        var partialResultList = SortedListOfDisjunctIntervals( mutableListOf<Interval>() )
+    if( formula.contains("false") ) {
+        //let resultList be empty
+    } else if( formula.contains("true") ) {
+        resultList.add( Interval( QZERO, false, true, QZERO, false, true ) ) //(-R,+R)
+    } else {
+        val listOfAlternatives : List<String> = divideSemiByOR( formula )
         
-        for( co in listOfConjuncts ){
-            val slodi = getListOfIntervalsSatisfyingCondition( co, varStr )
-            //intersect with partial result (AND)
-            partialResultList.intersectWithOtherDisjunctList( slodi )
+        for( alt in listOfAlternatives) {
+            val listOfConjuncts : List<String> = divideSemiByAND( alt )
+            var partialResultList = SortedListOfDisjunctIntervals( mutableListOf<Interval>() )
+        
+            for( co in listOfConjuncts ){
+                val slodi = getListOfIntervalsSatisfyingCondition( co, varStr )
+                //intersect with partial result (AND)
+                partialResultList.intersectWithOtherDisjunctList( slodi )
+            }
+            //unite the partial result with current resultList (OR)
+            resultList.uniteWithOtherDisjunctList( partialResultList )
         }
-        //unite the partial result with current resultList (OR)
-        resultList.uniteWithOtherDisjunctList( partialResultList )
     }
     
     return resultList
