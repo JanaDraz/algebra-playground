@@ -20,14 +20,18 @@ class App {
 }
 
 fun main(args: Array<String>) {
-    val polynoms : List<String> = listOf("x^2+1","x+1","x^3+x","0","p^2-p-2","2*x+1")
+    //val polynoms : List<String> = listOf("x^2+1","x+1","x^3+x","0","p^2-p-2","2*x+1")
     
-    for( pol in polynoms )
-        println( getRoots( pol ) )//will print out the result
+    //for( pol in polynoms )
+    //    println( getRoots( pol ) )//will print out the result
         
     var example1 : BioSystem = getBioSystemByName( "001" )
+    println("Biosystem 001 loaded.")
     
     var parSet : SortedListOfDisjunctIntervals = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0), arrayOf(1,0) ), example1, 1 )
+    println( parSet.getIntervals() )
+    
+    parSet = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0), arrayOf(1,0) ), example1, 2 )
     println( parSet.getIntervals() )
     
     //print hello world
