@@ -68,13 +68,14 @@ fun getTaylor2Formula( dirori1 : Int, state : Array<Int>, dirori2 : Int, system 
     return ""
 }
 
-/* Taylor 1st degree, steps
+/* Taylor 1st degree, k steps
  * dirori1 according to state rectangle
  * dirori2 according to state rectangle
  */
 fun getTaylor1Formula( dirori1 : Int, state : Array<Int>, dirori2 : Int, system : BioSystem, k : Int ) : String {
     var formula : String = "~~"
     var dim : Int = system.getDim()
+    var parCount : Int = system.getParamCount()
     var dir1 : Int = getDir( dirori1 ); var ori1 : Int = getOri( dirori1 )
     var dir2 : Int = getDir( dirori2 ); var ori2 : Int = getOri( dirori2 )
         
@@ -85,39 +86,48 @@ fun getTaylor1Formula( dirori1 : Int, state : Array<Int>, dirori2 : Int, system 
     
     val varStrs : Array<String> = system.getVarStrings()
     var taylVars : MutableList<String> = mutableListOf<String>()
+    //add variables with step labels to taylVars
     for( step in 0..k ) {
         for( i in 0..(dim-1) ) taylVars.add( varStrs[i] + "${step}" )
     }    
 
-    for( tv in taylVars ) existsPart += ( "ex(" + tv + "," )
-    existsPart += "ex(d," //add delta var
+    taylVars.add( "d" )
     
+    //use the incomplete list of variables (with delta var d, without parameters),
+    //to create the beginning of the quantified formula
+    for( tv in taylVars ) existsPart += ( "ex(" + tv + "," )
+        
+    //add parameters (without labels) to taylVars
+    for( par in system.getParStrings() ) {
+        taylVars.add( par )
+    }
+        
     for( i in 0..(dim*(k+1)) ) parenthesisPart += ")" //variables + d
 
     var j : Int = 0
     //bounds for first facet
-    var loBounds : Array<String> = arrayOf<String>()
-    var upBounds : Array<String> = arrayOf<String>()
+    var loBounds : MutableList<String> = mutableListOf<String>()
+    var upBounds : MutableList<String> = mutableListOf<String>()
     for( i in 0..(dim-1) ) {
         if( i == dir1 ) {
             if( ori1 > 0 ) { //right end of rectangle
-                loBounds[i] = ""
-                upBounds[i] = taylVars[i]+"="+system.getTres( i, state[i] + 1 )
+                loBounds.add("") //i
+                upBounds.add( taylVars[i]+"="+system.getTres( i, state[i] + 1 ) )
             } else { //ori1 < 0, left end of rectangle
-                loBounds[i] = taylVars[i]+"="+system.getTres( i, state[i] )
-                upBounds[i] = ""
+                loBounds.add( taylVars[i]+"="+system.getTres( i, state[i] ) )
+                upBounds.add( "" )
             }
         } else {
-            loBounds[i] = taylVars[i]+">="+system.getTres( i, state[i] )
-            upBounds[i] = taylVars[i]+"<="+system.getTres( i, state[i] + 1 )
+            loBounds.add( taylVars[i]+">="+system.getTres( i, state[i] ) )
+            upBounds.add( taylVars[i]+"<="+system.getTres( i, state[i] + 1 ) )
         }
         j += 1
     }
     //bounds inside state rectangle ... for taylor 
     for( m in 1..(k-1) ) {
         for( i in 0..(dim-1) ){
-            loBounds[j] = taylVars[j]+">="+system.getTres( i, state[i] )
-            upBounds[j] = taylVars[j]+"<="+system.getTres( i, state[i] + 1 )
+            loBounds.add( taylVars[j]+">="+system.getTres( i, state[i] ) )//j
+            upBounds.add( taylVars[j]+"<="+system.getTres( i, state[i] + 1 ) )
             j += 1
         }
     }
@@ -125,40 +135,64 @@ fun getTaylor1Formula( dirori1 : Int, state : Array<Int>, dirori2 : Int, system 
     for( i in 0..(dim-1) ) {
         if( i == dir2 ) {
             if( ori2 > 0 ) { //right end of rectangle
-                loBounds[j] = ""
-                upBounds[j] = taylVars[j]+"="+system.getTres( i, state[i] + 1 )
+                loBounds.add( "" ) //j
+                upBounds.add( taylVars[j]+"="+system.getTres( i, state[i] + 1 ) )
             } else { //ori1 < 0, left end of rectangle
-                loBounds[j] = taylVars[j]+"="+system.getTres( i, state[i] )
-                upBounds[j] = ""
+                loBounds.add( taylVars[j]+"="+system.getTres( i, state[i] ) )
+                upBounds.add( "" )
             }
         } else {
-            loBounds[j] = taylVars[j]+">="+system.getTres( i, state[i] )
-            upBounds[j] = taylVars[j]+"<="+system.getTres( i, state[i] + 1 )
+            loBounds.add( taylVars[j]+">="+system.getTres( i, state[i] ) )
+            upBounds.add( taylVars[j]+"<="+system.getTres( i, state[i] + 1 ) )
         }
         j += 1
     }
     //and bounds for d
-    loBounds[j] = "d>=0"
-    upBounds[j] = "d<="+ (system.getMaxT().toLong()/k)
+    loBounds.add( "d>=0" ) //j
+    upBounds.add( "d<=" + (system.getMaxT().toLong()/k) )
     
     for( i in 0..j ){
-        boundsPart += loBounds[i] + " and " + upBounds[i] + " and "
+        if( !loBounds[i].isEmpty() ) {
+            boundsPart += loBounds[i] + " and "
+        }
+        if( !upBounds[i].isEmpty() ) {
+            boundsPart += upBounds[i] + " and "
+        }
     }
     
-    //and x1=(x0+d) and y1=(y0+p*d)")))))
-    //taylor part ... deg 1 = Euler
-    //this functiones just for k=1
-    var tayl : Array<String> = arrayOf<String>()
-    var derString : String = ""
-    var vars0 : Array<String> = arrayOf<String>(taylVars).copyOfRange(0, dim)
-    for( i in 0..(dim-1) ) {
-        derString = system.getDerPols()[i].toString(*vars0)
-        tayl[i] = taylVars[dim+i] + "=(" + taylVars[i] + "+" + "d*(" + derString + "))"
-    } 
-    for( i in 0..(dim-2) ) {
-        taylorPart += tayl[i] + " and " 
+    for( step in 1..k ) {
+        //and x1=(x0+d) and y1=(y0+p*d)")))))
+        //taylor part ... deg 1 = Euler
+        //this function is just for k=1, TODO NOW extend for k general
+        var tayl : MutableList<String> = mutableListOf<String>() //taylor expressions per var
+        var derString : String = ""
+    
+        //variable strings for variables from the preceding step (initial point in facet 1)
+        var mutVarsOrig : MutableList<String> = mutableListOf<String>()
+        for( i in ((step-1)*dim)..(step*dim-1) ) {
+            mutVarsOrig.add( taylVars[i] )
+        }
+        //add the strings for parameters that appear in the derivatives
+        //they are placed after all the vars from all steps and after d
+        for( i in ((k+1)*dim + 1)..((k+1)*dim + parCount) ) {
+            mutVarsOrig.add( taylVars[i] )
+        }
+        //immutable array of varstrings usable by rings functions
+        var varsOrig : Array<String> = mutVarsOrig.toTypedArray() //arrayOf<String>( mutVars0 ) //not taylVars.copyOfRange(0, dim)
+    
+        for( i in 0..(dim-1) ) {
+            derString = system.getDerPols()[i].toString(*varsOrig)
+            tayl.add( taylVars[step*dim+i] + "=(" + taylVars[(step-1)*dim+i] + "+" + "d*(" + derString + "))" ) //ith place
+        } 
+    
+        for( i in 0..(dim-2) ) {
+            taylorPart += tayl[i] + " and " 
+        }
+        taylorPart += tayl[dim-1] //last for one step without "and" temporarily
+        if( step != k ) {
+            taylorPart += " and " //only the very last without the "and" permanently
+        }
     }
-    taylorPart += tayl[dim-1] //last without "and"
     
     var facetToFacetFormula = existsPart + boundsPart + taylorPart + parenthesisPart
     
@@ -169,7 +203,7 @@ fun getTaylor1Formula( dirori1 : Int, state : Array<Int>, dirori2 : Int, system 
  * derivatives, second derivatives, 
  * and settings for the computation like the degree of Taylor polynomials,
  * delta time for one step, maximum T for a rectangle (system dependent, 
- * at the beginning user specified)
+ * at the beginning user specified), k steps
  */
 fun getQuantifiedFormulaForTransition( dirori1 : Int, state : Array<Int>, dirori2 : Int, system : BioSystem, k : Int ) : String {
     val degTayl = system.getDegTayl()
@@ -188,23 +222,24 @@ fun getQuantifiedFormulaForTransition( dirori1 : Int, state : Array<Int>, dirori
 //if set is empty, try calling this method with more steps...
 fun getParamSetForTransition( dirori1 : Int, state1 : Array<Int>, state2 : Array<Int>, system : BioSystem, steps : Int = 2 ) : SortedListOfDisjunctIntervals {
     //identify direction and orientation of facet between the states
+    println("1 getParamSetForTransition called with dirori1="+dirori1+" state1"+state1.toString()+" steps="+steps)
     val dirori2 = getDirOriCode( state1, state2, system.getDim() )
-    
+    println("2 getParamSetForTransition dirori2=" + dirori2 )
     var formula = "false"
     var semiSet : String = "~"
-
+    println("3 getParamSetForTransition formula=" + formula )
     //for k steps
     //create formula for transition by k steps of Taylor approximation    
     formula = getQuantifiedFormulaForTransition( dirori1, state1, dirori2, system, steps )
-      
+    println("4 getParamSetForTransition formula="+formula)
     //get semialgebraic set of parameters satisfying formula
     semiSet = getQelResultForFormula( formula )
-    
-    //debug: print the semialgebraic set
-    println( semiSet )    
-    
+    println("5 getParamSetForTransition semiset="+semiSet)
+     
     //convert semialgebraic set to a sorted list of disjunct interval
-    return semiToIntervals( semiSet , system.getParStr() )
+    var slodi : SortedListOfDisjunctIntervals = semiToIntervals( semiSet , system.getParStr() )
+    println( "6 getParamSetForTransition slodi result="+slodi.toString() )
+    return slodi
 }
 
 fun getParamSetForSequenceOfRectangles( dirori : Int, states : Array<Array<Int>>, system : BioSystem, steps : Int ) : SortedListOfDisjunctIntervals {
