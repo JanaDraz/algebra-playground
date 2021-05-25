@@ -53,8 +53,16 @@ class BioSystem(   @JvmField var dim : Int,
         return this.dim
     }
     
+    fun getParamCount() : Int {
+        return this.paramCount
+    }
+    
     fun getVarStrings() : Array<String> {
         return this.varStrings
+    }
+    
+    fun getParStrings() : Array<String> {
+        return this.parStrings
     }
     
     fun getParStr() : String {
@@ -213,15 +221,15 @@ class BioSystem(   @JvmField var dim : Int,
 */                    
 fun getBioSystemByName( name : String ) : BioSystem {
     when( name ){
-        "001" -> return BioSystem( 2, 1, 
-                             arrayOf( "x", "y" ),
-                             arrayOf( "p" ),
-                             arrayOf( "1", "p" ),
-                             arrayOf( "0", "0" ),
-                             arrayOf( "0", "0" ),
-                             arrayOf( arrayOf( "0","1","2" ),
-                                      arrayOf( "0","1","2" ) ),
-                             "1", 1 )
+        "001" -> return BioSystem( 2, 1,  //dim, num pars 
+                             arrayOf( "x", "y" ), //vars
+                             arrayOf( "p" ),      //pars
+                             arrayOf( "1", "p" ), //der x, der y
+                             arrayOf( "0", "0" ), //der2s are zero
+                             arrayOf( "0", "0" ), //der2 / 2 zero again
+                             arrayOf( arrayOf( "0","1","2" ), //tresholds x
+                                      arrayOf( "0","1","2" ) ),//tresholds y
+                             "2", 1 ) //maxT, Taylor degree
         "002" -> return BioSystem( 2, 1,
                              arrayOf( "x", "y" ),
                              arrayOf( "p" ),
