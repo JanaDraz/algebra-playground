@@ -11,7 +11,7 @@ fun createReduceCommandsForFormula(formula: String): ArrayList<String> {
         add("off rlverbose;")
         add("phi := $formula;")
         add("psi := rlqe phi;")
-        add("rldecdeg1(psi,{p});")
+        add("rldecdeg1(psi,{p});") //leave this out?
         add("quit;")
     }
     return command
@@ -58,7 +58,18 @@ fun getResultFromReduce(commandsForReduce: ArrayList<String>): List<String> {
  * line (or more lines string) ended with "$"...?
  */
 fun parseQelResultFromReduceOutput( output : List<String> ) : String {
-    return "~~"
+    println("-1-parseQelResultFromReduceOutput output="+output+" size="+output.size)
+    var result : String = ""
+    var resultI : Int = -1
+    for( i in 0..(output.size-1) ) {
+        if( output[i].contains("5:") ) {
+            resultI = i+1
+        }
+        if( i == resultI ) {
+            result = output[ resultI ].substring( 7, (output[resultI].length))
+        }
+    }
+    return result
 }
 
 
@@ -66,6 +77,7 @@ fun getQelResultForFormula( formula : String ) : String {
     return parseQelResultFromReduceOutput( getResultFromReduce( createReduceCommandsForFormula( formula ) ) )
 }
 
+    
 fun parseRootsFromReduceOutput( output : List<String> ): List<NumQ> {
     var rootList : List<NumQ> = listOf<NumQ>()//empty at first
     var rootLine : String = "~"
@@ -90,7 +102,8 @@ fun parseRootsFromReduceOutput( output : List<String> ): List<NumQ> {
                     rootList += listOf( strToQ( rsParts[1] ) ) //"0" -> QZERO
                 }
             }
-        } 
+        }
+        rootList.sorted()
     }
     
     return rootList
@@ -117,6 +130,5 @@ fun getRoots( polyn : String ) :  List<NumQ> {
     println( reduceOutput )
     
     resultList = parseRootsFromReduceOutput( reduceOutput )
-    
     return resultList
 }
