@@ -19,7 +19,7 @@ val QHALF : NumQ = Q.mk(BigInteger.ONE,BigInteger.TWO)
   //isIntersectionEmptyWith(interval), intersectWith(interval), 
   //isUnitableWith(interval), uniteWith(interval)
 class Interval( left: NumQ, leftClosed: Boolean, leftInf: Boolean,
-                right: NumQ?, rightClosed: Boolean, rightInf: Boolean ) {
+                right: NumQ, rightClosed: Boolean, rightInf: Boolean ) {
                 
     @JvmField var le : NumQ = QZERO
     @JvmField var ri : NumQ = QZERO
@@ -33,6 +33,8 @@ class Interval( left: NumQ, leftClosed: Boolean, leftInf: Boolean,
         this.rClo = rightClosed
         this.lInf = leftInf
         this.rInf = rightInf
+        this.le = left
+        this.ri = right
         //set empty to (0,0):
         if( !this.lInf && !this.rInf ) {
             val lrcomparison = left.compareTo(right)
@@ -41,8 +43,40 @@ class Interval( left: NumQ, leftClosed: Boolean, leftInf: Boolean,
         }
     }
     
+    override fun toString() : String {
+        var resultStr : String = ""
+        if( this.lInf ) {
+            resultStr += "(-R"
+        } else if( this.lClo ) {
+            resultStr += "["
+            resultStr += this.le.toString()
+        } else{
+            resultStr += "("
+            resultStr += this.le.toString()
+        }
+        resultStr += ","
+        if( this.rInf ) {
+            resultStr += "+R)"
+        } else if( this.rClo ) {
+            resultStr += this.ri.toString()
+            resultStr += "]"
+        } else{
+            resultStr += this.ri.toString()
+            resultStr += ")"
+        }
+        return resultStr
+    }
+    
     fun getLe(): NumQ = this.le
     fun getRi(): NumQ = this.ri
+    
+    fun simpleSetLe( left: NumQ) { this.le = left }
+    fun simpleSetRi( right: NumQ) { this.ri = right }
+    fun simpleSetLClo( lc : Boolean ) { this.lClo = lc }
+    fun simpleSetRClo( rc : Boolean) { this.rClo = rc }
+    fun simpleSetLInf( li : Boolean ) { this.lInf = li }
+    fun simpleSetRInf( ri : Boolean) { this.rInf = ri }
+        
     fun setLe(left: NumQ) { this.le = left; this.setRInf( false ) }
     fun setRi(right: NumQ) {this.ri = right; this.setLInf( false )}
     
@@ -106,15 +140,22 @@ class Interval( left: NumQ, leftClosed: Boolean, leftInf: Boolean,
         else
             return Q.mk(BigInteger.NEGATIVE_ONE,BigInteger.ONE)
     }
+    
     fun isEmpty(): Boolean {
         //the moment an interval becomes empty, we set le,ri to 0s
-        return ( this.le.isZero() && this.ri.isZero() && !this.lClo && !this.rClo )
+        //andl closed to false, and infinite to false
+        return ( this.le.isZero() && this.ri.isZero() && !this.lClo && !this.rClo && !this.lInf && !this.rInf)
     }
     
     fun isOnePoint() : Boolean {
         return (this.isFinite() && this.isClosed() && (this.le.compareTo(this.ri) == 0) )
     }
     
+    /*compareLeft
+     * return <0 if my left is smaller than others left
+     * return =0 if lefts are the same
+     * return >0 if my left is bigger than others left
+     */
     fun compareLeft(oth : Interval) : Int {
         //this - other
         if( this.isLInf() ){//-inf
@@ -132,6 +173,12 @@ class Interval( left: NumQ, leftClosed: Boolean, leftInf: Boolean,
         }
     }
     
+    
+    /*compareRight
+     * return <0 if my right is smaller than others right
+     * return =0 if rights are the same
+     * return >0 if my right is bigger than others right
+     */
     fun compareRight(oth : Interval) : Int {
         //this - other
         if( this.isRInf() ){
@@ -222,28 +269,31 @@ class Interval( left: NumQ, leftClosed: Boolean, leftInf: Boolean,
         }
     }
     
+    /* {a,b},{c,d} has intersection?
+     * 
+     */
     fun hasNonemptyIntersectionWith(oth : Interval) : Boolean{
         if( !this.isEmpty() && !oth.isEmpty() ){
             //none of the intervals is empty
             val thisMinusOtherL = this.compareLeft(oth)
             val thisMinusOtherR = this.compareRight(oth)
-            if( thisMinusOtherL < 0 && thisMinusOtherR < 0) {
+            if( thisMinusOtherL <= 0 && thisMinusOtherR <= 0) { //a<=c,b<=d
                 val bccompare = this.compareThisROtherL( oth )
-                if( bccompare < 0){
+                if( bccompare < 0){ //b<c no intersection
                     return false
-                }else if( bccompare == 0 ){
-                    return ( this.rClo && oth.isLClo() )
-                }else{
+                }else if( bccompare == 0 ){ //b=c
+                    return ( this.rClo && oth.isLClo() ) // b][c true, else false
+                }else{ //b>c overlapping 
                     return true
                 }  
-            }else if( thisMinusOtherL < 0 && thisMinusOtherR < 0 ) {
+            }else if( thisMinusOtherL >= 0 && thisMinusOtherR >= 0 ) {//a>=c,b>=d
                 val adcompare = this.compareThisLOtherR( oth )
-                if( adcompare < 0){
+                if( adcompare < 0){// a<d overlapping
                     return true
-                }else if( adcompare == 0 ){
-                    return ( this.lClo && oth.isRClo() )
+                }else if( adcompare == 0 ){//a=d
+                    return ( this.lClo && oth.isRClo() ) // d][a true, else false
                 }else{
-                    return false
+                    return false// a>d no intersection
                 }
             }else{
                 return true                
@@ -294,6 +344,7 @@ class Interval( left: NumQ, leftClosed: Boolean, leftInf: Boolean,
 /* Helper class intersection list intersects one interval,
  * optional parameter startIndex inicates the index in the list
  * from which to start (0 by default).
+ * Assumption: the list is a sorted list of disjunct intervals
  */
 class IntersectionOfListAndInterval(@JvmField var listI : MutableList<Interval>,
     @JvmField var interval: Interval, @JvmField var startIndex : Int = 0){
@@ -302,28 +353,47 @@ class IntersectionOfListAndInterval(@JvmField var listI : MutableList<Interval>,
         @JvmField var firstIntersecting : Interval = Interval(QZERO, false, false, QZERO, false, false)
         @JvmField var lastIntersecting : Interval = Interval(QZERO, false, false, QZERO, false, false)
         @JvmField var intersectingList : MutableList<Interval> = mutableListOf<Interval>()
-        
+        @JvmField var intersectingListOfIndices : MutableList<Int> = mutableListOf<Int>()
+                
         init {        
-            for( i  in startIndex..this.listI.size ) {
+            for( i  in startIndex..(listI.size-1) ) {
                 if( listI[i].hasNonemptyIntersectionWith( interval )){
+                    intersectingListOfIndices.add( i )
                     if( foundFirst == false ){
                         foundFirst = true
                         firstIndex = i
                         firstIntersecting = listI[i]
-                        lastIntersecting = listI[i]
                     }
-                    if( firstIndex < i) intersectingList.add(listI[i])
-                    //compare the right side of the "old" and "possibly new" 
-                    //last intersecting interval
-                    if( ( lastIntersecting.compareRight( listI[i] ) < 0 )
-                        || ( lastIntersecting.compareRight( listI[i] ) == 0 ) && listI[i].isRClo() )
-                        lastIntersecting = listI[i] //maybe a point more or equal to current
+                    lastIntersecting = listI[i]
+                    intersectingList.add(listI[i])
                 }                     
             }
+            if( foundFirst ){
+                //trim first if neccessary
+                var trimFirst : Interval = intersectingList[0].intersectWith( interval )
+                intersectingList[0] = trimFirst
+                //trim last if neccessary
+                var trimLast : Interval = intersectingList[ intersectingList.size-1 ].intersectWith( interval )
+                intersectingList[ intersectingList.size-1 ] = trimLast
+            }
+            //intersectingListOfIndices.sortByDescending{it.int}
+        }
+        
+        override fun toString() : String {
+            var resultStr : String = "{"
+            for( j in 0..(this.intersectingList.size-1) ){
+                resultStr += this.intersectingList[j].toString()
+                if( j < (this.intersectingList.size -1) ) resultStr += ","
+            }
+            resultStr += "}"        
+            return resultStr
         }
         
         fun getIntersectingList() : MutableList<Interval>{
             return this.intersectingList
+        }
+        fun getIntersectingListOfIndices() : MutableList<Int>{
+            return this.intersectingListOfIndices
         }
         fun getFirstIntersectingInterval() : Interval{
             return this.firstIntersecting
@@ -337,8 +407,9 @@ class IntersectionOfListAndInterval(@JvmField var listI : MutableList<Interval>,
         fun getFirstIndex() : Int{
             return this.firstIndex
         }
-        
     }
+
+
 
 /*
  * class sorted list of intervals
@@ -367,15 +438,31 @@ class SortedListOfDisjunctIntervals( @JvmField var intervals : MutableList<Inter
         return this.intervals
     }
     
+    override fun toString() : String {
+        var resultString : String = "{"
+        for( i in 0..( this.intervals.size - 1 ) ) {
+            resultString += this.intervals[i].toString()
+            if( i < (this.intervals.size -1 ) ) {
+                resultString += ","
+            }
+        }
+        resultString += "}"
+        return resultString
+    }
+    
     /* Adds the interval to this.intervals
      * the return value of index where the new interval crafted from 
      * existing intersecting intervals in the list and the input interval
      * appears in the disjunct list. 
      */
     fun add( interval : Interval, startIndex : Int = 0 ) : Int{
+        //println("-----------------Adding an interval "+interval.toString()+" to SLODI "+this.toString() )
         val iL = IntersectionOfListAndInterval(this.intervals, interval, startIndex )
+        //println("intersection: "+iL.toString())
+        var newI : Int = -1
         
         if(iL.isFoundFirst()){
+            //println("intersection found")
             //there is a list of intersecting intervals that have to be replaced by one
             //possibly bigger than the new added interval
             var left : NumQ = iL.getFirstIntersectingInterval().getLe()
@@ -396,17 +483,112 @@ class SortedListOfDisjunctIntervals( @JvmField var intervals : MutableList<Inter
                 rightInf = interval.isRInf()    
             }
             //all intersecting intervals but the first one out
-            this.intervals.removeAll(iL.getIntersectingList())
+            for( i in iL.getIntersectingListOfIndices().sortedDescending() ){
+                this.intervals.removeAt( i )
+            }
+            //this.intervals.removeAll(iL.getIntersectingList())
+            //println("slodi remove intersecting="+this.toString())
             //replace the first one
-            this.intervals[iL.getFirstIndex()] = Interval( left, leftCl, leftInf, right, rightCl, rightInf )
+            this.intervals.add( iL.getFirstIndex(),
+                                Interval( left, leftCl, leftInf, right, rightCl, rightInf ))
+            //println("slodi added="+this.toString())
+            newI = iL.getFirstIndex()
             
-        } else {//old intervals have no intersection with new interval
-            this.intervals.add( interval )
-            return (this.intervals.size - 1)
+        } else {//old intervals have no intersection with new interval 
+            //println("intersection not found")
+            //still need to find the right place for the new interval though...
+            //backwards? until the interval fits, given it is disjoint
+            var j = this.intervals.size //would be the last element in the list
+            while( (j > 0)  && moveFront(j, interval) ) //possible and right to move to the beginning
+            {
+                j--
+            }
+            if( j < 0 ) j=0
+            //println("insert at j="+j)
+            this.intervals.add( j, interval )
+            //println("slodi added="+this.toString())
+            newI = j
         }
-        return iL.getFirstIndex()    
+        
+        var left : Boolean = false
+        var right : Boolean = false
+        if( newI > 0){
+            left = mergable( this.intervals[ newI - 1], interval )
+        } 
+        if( newI < (this.intervals.size - 1) ){
+            right = mergable( interval, this.intervals[ newI + 1] )
+        }
+        if( left || right ) {
+            return merge( newI, left, right )
+        } else {//no need to merge, all set
+            return newI
+        }
     }
 
+    fun mergable( ab : Interval, cd : Interval ) : Boolean {
+        return (ab.compareThisROtherL( cd ) == 0 ) && ( ab.isRClo() || cd.isLClo() )
+    }
+
+    //assuming i is in good range
+    //assuming the added interval is disjoint to all the others
+    fun moveFront( j : Int, interval : Interval ) : Boolean {
+        if( j < 1 ) {
+            //no more index to move to
+            return false
+        } else {//there actually is an interval on position j-1
+            var jMinusOneInterval : Interval = this.intervals[ j-1 ]
+            val iCompareM = interval.compareLeft( jMinusOneInterval )
+            
+            if( iCompareM < 0 ){
+                return true
+            }else if( iCompareM > 0 ){
+                return false
+            }else{//the left points are equal
+                if( interval.isLClo() && jMinusOneInterval.isLOpen() ){ // [,( situation
+                    return true
+                }else{
+                    return false
+                }
+            }
+        }
+    }
+    
+    /*alters the intervals
+     */
+    fun merge( i : Int, left : Boolean, right : Boolean) : Int {
+        var newInterval : Interval = Interval(QZERO, false, false, QZERO, false, false)
+        var newI : Int = i
+        var listToRemove : MutableList<Interval> = mutableListOf<Interval>()
+        
+        //println( "i="+i+" left="+left+" right="+right )
+        
+        if( left ) {
+            newI = i-1
+            this.intervals[newI].simpleSetRi( this.intervals[i].getRi() )
+            this.intervals[newI].simpleSetRClo( this.intervals[i].isRClo() )
+            //println("slodi merge 1="+this.toString())  
+            this.intervals[newI].simpleSetRInf( this.intervals[ i ].isRInf())
+            //println("slodi merge 2="+this.toString())
+                      
+            listToRemove.add( this.intervals[i] )
+        }
+        //listToRemove.add( this.intervals[i] )
+        if( right ) {
+            this.intervals[newI].simpleSetRi( this.intervals[i+1].getRi() )
+            this.intervals[newI].simpleSetRClo( this.intervals[i+1].isRClo() )
+            //println("slodi merge 3="+this.toString())
+            this.intervals[newI].simpleSetRInf( this.intervals[ i+1 ].isRInf() )
+            //println("slodi merge 4="+this.toString())
+            listToRemove.add( this.intervals[i+1] )
+        }
+        this.intervals.removeAll( listToRemove )
+        //println("slodi removed merged="+this.toString())
+        //println("newInterval="+newInterval.toString())
+        //this.intervals.add( newI, newInterval )
+        //println("slodi set merged="+this.toString())
+        
+        return newI
+    }
     
     /*Does not modify this.intervals
      */
@@ -460,6 +642,9 @@ class SortedListOfDisjunctIntervals( @JvmField var intervals : MutableList<Inter
      * add all the intervals subsequently (using indices to not have 
      * to go through the whole list when searching for place where to add 
      * the next dijunct interval from the list.
+     * 
+     * !!just now this method is garbage...
+     * !!!!!still garbage big garbage
      */
     fun getUnionWithOtherDisjunctList( oth : SortedListOfDisjunctIntervals ) : MutableList<Interval> {
         //search for each of the newly added intervals in the list, 
@@ -469,15 +654,29 @@ class SortedListOfDisjunctIntervals( @JvmField var intervals : MutableList<Inter
         var resultList : MutableList<Interval> = mutableListOf<Interval>()
         
         for( inter in oth.getIntervals() ){
-            val j : Int = this.add( inter, i )
-            if( j>i ) i = j
+            //val j : Int = resultList.add( inter )
+           // if( j>i ) i = j
         }
         return resultList
+        
     }
     
     fun uniteWithOtherDisjunctList( oth : SortedListOfDisjunctIntervals){
-        this.intervals = this.getUnionWithOtherDisjunctList( oth )
+        //this.intervals = this.getUnionWithOtherDisjunctList( oth )
+        //println("other:"+oth.toString())
+        for( inter in oth.getIntervals() ) {
+            //println("adding "+inter.toString() )
+            this.add(inter)
+        }
     }
+}
+
+fun removeParenthesis( str : String ) : String {
+    //var re = "[()]".toRegex()
+    //return re.replace( str, "" )
+    val result = str.filter{ it -> (it != '('  && it !=')' )} 
+    println("Bez zavorek = "+ result)
+    return result
 }
 
 /* semiToIntervals : list Interval
@@ -493,19 +692,28 @@ fun semiToIntervals( formula : String, varStr : String ) : SortedListOfDisjunctI
     } else if( formula.contains("true") ) {
         resultList.add( Interval( QZERO, false, true, QZERO, false, true ) ) //(-R,+R)
     } else {
-        val listOfAlternatives : List<String> = divideSemiByOR( formula )
-        
+        val formulaWithoutParenthesis = removeParenthesis( formula )
+        val listOfAlternatives : List<String> = divideSemiByOR( formulaWithoutParenthesis )
+        println( listOfAlternatives )
         for( alt in listOfAlternatives) {
             val listOfConjuncts : List<String> = divideSemiByAND( alt )
             var partialResultList = SortedListOfDisjunctIntervals( mutableListOf<Interval>() )
-        
-            for( co in listOfConjuncts ){
-                val slodi = getListOfIntervalsSatisfyingCondition( co, varStr )
-                //intersect with partial result (AND)
-                partialResultList.intersectWithOtherDisjunctList( slodi )
+            println( listOfConjuncts )
+            for( i in 0..(listOfConjuncts.size - 1) ){
+                println( " Slodi for this conjunct co: "+listOfConjuncts[i])
+                val slodi = getListOfIntervalsSatisfyingCondition( listOfConjuncts[i], varStr )
+                println( " One conjunct result: "+ slodi.toString() )
+                if( i == 0 ){
+                    partialResultList = slodi
+                } else {
+                    //intersect with partial result (AND)
+                    partialResultList.intersectWithOtherDisjunctList( slodi )
+                    println( " intersected with partialRes: "+partialResultList.toString() )
+                }
             }
             //unite the partial result with current resultList (OR)
             resultList.uniteWithOtherDisjunctList( partialResultList )
+            println("One alternative result: "+ resultList.toString() )
         }
     }
     
@@ -548,14 +756,21 @@ class SemialgebraicInfoFromCondition (@JvmField var oneCondition : String){
     init{
         //parse the condition into
         //polynomial, eq or ineq, zero
-        //divide by spaces, last = 0, last but one = eqineq,
+        //divide by spaces, last nonempty = 0, last but one nonempty = eqineq,
         //squash the remainder back together, its a polynomial
-        val listOfStr = oneCondition.split("0")
-        if( listOfStr.size > 2 ){
-            this.rhs = listOfStr[listOfStr.size - 1]
-            this.eqineq = strToIneqCode(listOfStr[listOfStr.size - 2])
-            for( i in 0..(listOfStr.size-3) ){
-                polyn = polyn + listOfStr[i]
+        var listOfStr = oneCondition.split(" ")
+        var listOfNonemptyStr : MutableList<String> = mutableListOf<String>()
+        for( str in listOfStr ) {
+            if( str.isNotEmpty() ) {
+                listOfNonemptyStr.add(str)
+            }
+        }
+        if( listOfNonemptyStr.size > 2 ){
+            this.rhs = listOfNonemptyStr[listOfNonemptyStr.size - 1]
+            // -2 <    -1 <=   0 =   1 >=   2 >
+            this.eqineq = strToIneqCode(listOfNonemptyStr[listOfNonemptyStr.size - 2])
+            for( i in 0..(listOfNonemptyStr.size-3) ){
+                polyn = polyn + listOfNonemptyStr[i]
             }
         }
     }
@@ -605,9 +820,15 @@ fun getSignPolAt( polyn : UPolyInQ, sample : NumQ ) : Int {
  */
 fun getListOfIntervalsSatisfyingCondition( oneCondition : String, varStr : String ) : SortedListOfDisjunctIntervals {
     val info = SemialgebraicInfoFromCondition( oneCondition )
+    println("Info.polyn: "+info.getPolyn())
+    println("Info.eqIneq: "+info.getEqIneq())
+    println("Info.RHS: "+info.getRHS())
     val roots = getRoots( info.getPolyn() ) //sorted list of Q roots of the polynomial [] for zero polyn
+    println("Roots: "+roots)
     val polyn = strToUPolyInQ( info.getPolyn(), varStr )
+    println("Polyn: "+polyn)
     val signsList = getListOfSigns( roots, polyn ) //[0] for zero polynomial
+    println("SignsList: "+signsList)
     var listForResult = mutableListOf<Interval>()
     //decide from signs and the eqineq id which intervals to take into the result
     //we suppose the condition is <=> 0 (with zero rhs)
@@ -655,7 +876,7 @@ fun getListOfIntervalsSatisfyingCondition( oneCondition : String, varStr : Strin
                      //prolonged through this point) .. do nothing
                 
                      //deal with the interval: (for such $en no merging of the intervals)
-                     if( signsList[0] * en > 0 ) {
+                     if( signsList[i+1] * en > 0 ) {
                          listForResult.add( Interval( roots[i], false, false, roots[i+1], false, false ) )
                      }
                  }
@@ -669,7 +890,7 @@ fun getListOfIntervalsSatisfyingCondition( oneCondition : String, varStr : Strin
                          actualInterval = Interval( roots[i], true, false, roots[i], true, false )
                      }
                      //deal with the interval:
-                     if( signsList[0] * en >= 0 ) { 
+                     if( signsList[i+1] * en >= 0 ) { 
                          //add this line segment to actual interval ?,ri+1)
                          //we know that addToActual must be true now, <>= holds at ri
                          actualInterval.setRValClo(roots[i+1],false)
@@ -721,6 +942,7 @@ fun getListOfIntervalsSatisfyingCondition( oneCondition : String, varStr : Strin
                  //...or polyn is zero and has been already dealt with, so do nothing
              }
         }  
+
         //last interval (roots[ roots.size - 1 ],+R) :
         when( en ){
         //<>
@@ -733,6 +955,7 @@ fun getListOfIntervalsSatisfyingCondition( oneCondition : String, varStr : Strin
                      //add this halfline to actual interval ?,ri+1)
                      //we know that addToActual must be true now, <>= holds at ri
                      actualInterval.setRInf( true ) // ?,+R)
+                     listForResult.add( actualInterval )
                  } else {//do not add this halfline to the interval
                      //if there is an actual interval under construction, 
                      //output it now
@@ -769,7 +992,7 @@ fun getListOfSigns( roots : List<NumQ>, polyn : UPolyInQ ): List<Int> {
         //get sample by avg of the bounds
         for( i in 0..(roots.size-2) ){
             r1 = roots[i]
-            r2 = roots[i+2]
+            r2 = roots[i+1]
             sample = (r1.add(r2)).multiply( QHALF )
             resultList += listOf( getSignPolAt( polyn, sample ) )
         }    
