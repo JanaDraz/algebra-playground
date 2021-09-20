@@ -57,8 +57,8 @@ fun  stringCoeffTimesTermToMPolyInQ(qxterm : String, vars : Array<String>) : MPo
     var qnumber : MPolyInQ
     var strqnumber : String
     val muls = qxterm.split("*")
-    println("muls*")
-    println(muls)
+    //println("muls*")
+    //println(muls)
     for (m in muls){
         //is first letter a digit? (then m is a Q number)
         if(m[0].isDigit()){
@@ -95,15 +95,15 @@ fun strToMPolyInQ(poly : String, vars : Array<String>) : MPolyInQ{
     val minusOne = Rings.MultivariateRingQ(vars.size).getNegativeOne()
     //regex split into terms +
     val chunks = poly2.split("+")
-    println("chunks+:")
-    println(chunks)
+    //println("chunks+:")
+    //println(chunks)
     for(chunk in chunks){
         //if contains -, deal with it
         if(chunk.contains('-')){
             //we suppose the form is like a-b-c or -a-b etc., hoping for no parenthesis
             val chunksm = chunk.split("-")
-            println("chunksm-")
-            println(chunksm)
+            //println("chunksm-")
+            //println(chunksm)
             var currentnegative = false//: Boolean = (chunksm[0].isEmpty())
             for(chu in chunksm){
                 if(!chu.isEmpty()){
