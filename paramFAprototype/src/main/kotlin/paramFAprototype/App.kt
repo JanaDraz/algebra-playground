@@ -25,15 +25,48 @@ fun main(args: Array<String>) {
     //for( pol in polynoms )
     //    println( getRoots( pol ) )//will print out the result
         
-    var example1 : BioSystem = getBioSystemByName( "001" )
-    println("Biosystem 001 loaded.")
+    var examplesStrs = arrayOf("001sys","002sys","003LV","004POL","005ROS")
+    var numero = 1
+    var parRangesMin = arrayOf(-5.0f, -5.0f, 0.0f, 0.1f, 5.7f)
+    var parRangesMax = arrayOf(5.0f,  5.0f,  3.0f, 4.0f, 14.0f)
+        
+    for( numero in 0..4 ) {
+        var example1 : BioSystem = getBioSystemByName( examplesStrs[numero] )
+        println("Biosystem "+numero+" loaded.")
     
-    var parSet : SortedListOfDisjunctIntervals = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0), arrayOf(1,0) ), example1, 1 )
-    println( parSet.getIntervals() )
+    //getParamSetForSequenceOfRectangles( dirori : Int, states : Array<Array<Int>>, system : BioSystem, steps : Int, method : String ) : SortedListOfDisjunctIntervals
+    //var parSet : SortedListOfDisjunctIntervals = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0), arrayOf(1,0) ), example1, 1,"QEL-Reduce")
+    //println( parSet.getIntervals() )
+    /*
+   
+    var commands : ArrayList<String> = 
+    createCommandsForDrealRegularState1PminPmax( example1, arrayOf(0,0), 0,-1,0,1, 0.0f, 2.1f )
+     
+    println( commands )
     
-    parSet = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0), arrayOf(1,0) ), example1, 2 )
-    println( parSet.getIntervals() )
+    var drealResult = getResultFromDreal( commands )
+
+    println( drealResult )*/
+        var minp : Float = parRangesMin[ numero ]
+        var maxp : Float = parRangesMax[ numero ]
+            
+        if( numero < 4 )
+            println( encodeAndCheck( minp , maxp, example1, arrayOf(0,0), 0,-1,0,1, 0.1f, 10 ) )
+        else
+            println( encodeAndCheck( minp , maxp, example1, arrayOf(0,0,0), 0,-1,0,1, 0.1f, 10 ) )
+    }
+    /*var commandsFile : String = "/home/jfabriko/PROGRAMOVANI/rings-pokusy/sgradlem/drealInput5.smt2"
+    println( getResultFromDrealFile( commandsFile ) )
+    */
+    
+    //var parSet3d : SortedListOfDisjunctIntervals = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0,0), arrayOf(1,0,0) ), example1, 1,"QEL-Reduce")
+    //println( parSet3d.getIntervals() )
+    //println( commands )
+    //println( drealResult )
+    //2 steps:
+    //parSet = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0), arrayOf(1,0) ), example1, 2, "QEL-Reduce" )
+    //println( parSet.getIntervals() )
     
     //print hello world
-    println( App().greeting )
+    //println( App().greeting )
 }
