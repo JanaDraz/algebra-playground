@@ -12,6 +12,17 @@ fun getResultFromDreal(commandsForDreal: ArrayList<String>): List<String> {
     return output1 //digResultFromReduceOutput(output1)
 }
 
+/*Boolean answer to DREAL commands
+ * UNSAT -> False
+ * delta-SAT -> True
+ */
+fun checkCommandsDreal( commands : ArrayList<String>) : Boolean {
+    var drealOutput : List<String> = getResultFromDreal( commands )
+    var checkStr : String = drealOutput[0]
+    println(checkStr)
+    return !( checkStr.contains("unsat") )
+}
+
 /*
  * filename should be an absolute path to dreal commands
  */
@@ -33,10 +44,182 @@ fun getResultFromDreach(commandsForDreach: ArrayList<String>): List<String> {
 
     return output1 //digResultFromReduceOutput(output1)
 }
-/*
- * pmin, pmax Float
+
+/* one value of p in R
+ * check existence of the transition for given value of p
  */
-fun createCommandsForDrealRegularState1PminPmax( biosystem : BioSystem, state : Array<Int>, dir1: Int, ori1 : Int, dir2 : Int, ori2 : Int, pminF: Float, pmaxF : Float ) : ArrayList<String> {
+fun createCommandsForDrealRegularState1Pvalue( biosystem : BioSystem, state : Array<Int>, dir1: Int, ori1 : Int, dir2 : Int, ori2 : Int, p: Double ) : ArrayList<String> {
+    var dim : Int = biosystem.getDim()
+    var maxT : String = biosystem.getMaxT()
+    var parCount : Int = biosystem.getParamCount()
+    
+    val parStrs : Array<String> = biosystem.getParStrings()
+    val varStrs : Array<String> = biosystem.getVarStrings()
+
+    var allVars : MutableList<String> = mutableListOf<String>()
+    //NOT HERE, PARs WILL BE VALUEs allVars.addAll( parStrs )
+    allVars.addAll( varStrs )
+    var allVars_0 : MutableList<String> = mutableListOf<String>()
+    var allVars_t : MutableList<String> = mutableListOf<String>()
+    for( v in allVars ){
+        allVars_0.add( v+"_0")
+        allVars_t.add( v+"_t")
+    }
+    
+    //DO NOT NEED THE PARAMETERS THERE ARE VALUES p,q
+    //var pmin : String = pminD.toBigDecimal().toPlainString()
+    //var pmax : String = pmaxD.toBigDecimal().toPlainString()
+    
+    var equations : MutableMap<String,String> = mutableMapOf()
+    //PARAMETERs WILL BE VALUEs equations.put(parStrs[0], "0.0")
+    equations.putAll( biosystem.getPrefixEquations() )
+    
+    val command = ArrayList<String>().apply {
+        // beginning
+        add("(set-logic QF_NRA_ODE)")
+        /*// WE WILL NOT ADD PARAMs: now add params
+        for( p in parStrs){
+                declareVariable(p, pmin, pmax)
+                declareVariable(p + "_0", pmin, pmax)
+                declareVariable(p + "_t", pmin, pmax)
+        }*/
+        // now add vars
+        for( i in 0..(dim-1) ){
+                var v : String = varStrs[i]
+                var vmin : String = biosystem.getMinTres( i )
+                var vmax : String = biosystem.getMaxTres( i )
+                //min max treshold in system
+                declareVariable(v, vmin, vmax)
+                //first facet condition
+                var vfacetmin : String = biosystem.getMinOnFacet( i, state, dir1, ori1 )
+                var vfacetmax : String = biosystem.getMaxOnFacet( i, state, dir1, ori1 )
+                declareVariable(v + "_0", vfacetmin, vfacetmax)
+                //min max treshold in system
+                declareVariable(v + "_t", vmin, vmax)
+        }
+        // now add time
+        declareVariable("time_0", "0.0", maxT)
+        
+        val pStr : String = p.toBigDecimal().toPlainString()
+        val qStr : String = ""//dummyQ
+                
+        //PAR VALUEs SHOULD APPEAR IN THE equations BEFORE DECLARING ODE
+        for( ( keyVar, valueEq ) in equations.entries ){
+            equations[keyVar] = valueEq.replace( parStrs[0], pStr )
+        }
+        
+        // define the flow, set d par /dt = 0.0
+        declareODE( equations )//ode flow
+        add(assertStr(conjunction(
+                //depends on p,q
+                getDerivativePointsInsideConditionPQ(pStr,qStr, biosystem, state, dir1, ori1, "_0" ),
+                integral0( allVars_t, allVars_0, "time_0"),//integrals
+                //does not depend on p,q
+                forallT(str(0.0), "time_0", getInRectangleCondition( biosystem, state ) ),
+                getOutsideFacetCondition( biosystem, state, dir2, ori2, "_t"),//goal _t
+                //depends on p,q
+                getDerivativePointsOutsideConditionPQ( pStr,qStr,biosystem, state, dir2, ori2, "_t" )
+            )))
+        // end
+        add("(check-sat)")
+        add("(exit)")
+    }
+    
+    return command
+}
+
+
+/*
+ * p and q, one point in R^2 
+ * check if the trasition exists for the one given valuation of p,q
+ */
+fun createCommandsForDrealRegularState2PQvalue( biosystem : BioSystem, state : Array<Int>, dir1: Int, ori1 : Int, dir2 : Int, ori2 : Int, p: Double, q : Double ) : ArrayList<String> {
+    var dim : Int = biosystem.getDim()
+    var maxT : String = biosystem.getMaxT()
+    var parCount : Int = biosystem.getParamCount()
+    
+    val parStrs : Array<String> = biosystem.getParStrings()
+    val varStrs : Array<String> = biosystem.getVarStrings()
+
+    var allVars : MutableList<String> = mutableListOf<String>()
+    //NOT HERE, PARs WILL BE VALUEs allVars.addAll( parStrs )
+    allVars.addAll( varStrs )
+    var allVars_0 : MutableList<String> = mutableListOf<String>()
+    var allVars_t : MutableList<String> = mutableListOf<String>()
+    for( v in allVars ){
+        allVars_0.add( v+"_0")
+        allVars_t.add( v+"_t")
+    }
+    
+    //DO NOT NEED THE PARAMETERS THERE ARE VALUES p,q
+    //var pmin : String = pminD.toBigDecimal().toPlainString()
+    //var pmax : String = pmaxD.toBigDecimal().toPlainString()
+    
+    var equations : MutableMap<String,String> = mutableMapOf()
+    //PARAMETERs WILL BE VALUEs equations.put(parStrs[0], "0.0")
+    equations.putAll( biosystem.getPrefixEquations() )
+    
+    val command = ArrayList<String>().apply {
+        // beginning
+        add("(set-logic QF_NRA_ODE)")
+        /*// WE WILL NOT ADD PARAMs: now add params
+        for( p in parStrs){
+                declareVariable(p, pmin, pmax)
+                declareVariable(p + "_0", pmin, pmax)
+                declareVariable(p + "_t", pmin, pmax)
+        }*/
+        // now add vars
+        for( i in 0..(dim-1) ){
+                var v : String = varStrs[i]
+                var vmin : String = biosystem.getMinTres( i )
+                var vmax : String = biosystem.getMaxTres( i )
+                //min max treshold in system
+                declareVariable(v, vmin, vmax)
+                //first facet condition
+                var vfacetmin : String = biosystem.getMinOnFacet( i, state, dir1, ori1 )
+                var vfacetmax : String = biosystem.getMaxOnFacet( i, state, dir1, ori1 )
+                declareVariable(v + "_0", vfacetmin, vfacetmax)
+                //min max treshold in system
+                declareVariable(v + "_t", vmin, vmax)
+        }
+        // now add time
+        declareVariable("time_0", "0.0", maxT)
+        
+        val pStr : String = p.toBigDecimal().toPlainString()
+        val qStr : String = q.toBigDecimal().toPlainString()
+        
+        //PAR VALUEs SHOULD APPEAR IN THE equations BEFORE DECLARING ODE
+        for( ( keyVar, valueEq ) in equations.entries ){
+            equations[keyVar] = valueEq.replace( parStrs[0], pStr )
+            equations[keyVar] = (""+equations[keyVar]).replace( parStrs[1], qStr )
+        }
+        
+        // define the flow, set d par /dt = 0.0
+        declareODE( equations )//ode flow
+        add(assertStr(conjunction(
+                //depends on p,q
+                getDerivativePointsInsideConditionPQ(pStr,qStr, biosystem, state, dir1, ori1, "_0" ),
+                integral0( allVars_t, allVars_0, "time_0"),//integrals
+                //does not depend on p,q
+                forallT(str(0.0), "time_0", getInRectangleCondition( biosystem, state ) ),
+                getOutsideFacetCondition( biosystem, state, dir2, ori2, "_t"),//goal _t
+                //depends on p,q
+                getDerivativePointsOutsideConditionPQ( pStr,qStr,biosystem, state, dir2, ori2, "_t" )
+            )))
+        // end
+        add("(check-sat)")
+        add("(exit)")
+    }
+    
+    return command
+}
+
+/*
+ * pmin, pmax Double
+ * -if ori1 is -1,1 then the entry set to the state is a facet
+ * -if ori1=0 the initial points can be anywhere in the rectangle
+ */
+fun createCommandsForDrealRegularState1PminPmax( biosystem : BioSystem, state : Array<Int>, dir1: Int, ori1 : Int, dir2 : Int, ori2 : Int, pminD: Double, pmaxD : Double ) : ArrayList<String> {
     var dim : Int = biosystem.getDim()
     var maxT : String = biosystem.getMaxT()
     var parCount : Int = biosystem.getParamCount()
@@ -54,11 +237,11 @@ fun createCommandsForDrealRegularState1PminPmax( biosystem : BioSystem, state : 
         allVars_t.add( v+"_t")
     }
     
-    var pmin : String = pminF.toString()
-    var pmax : String = pmaxF.toString()
+    var pmin : String = pminD.toBigDecimal().toPlainString()
+    var pmax : String = pmaxD.toBigDecimal().toPlainString()
     
     var equations : MutableMap<String,String> = mutableMapOf()
-    equations.put(parStrs[0], "0.0")
+    equations.put(parStrs[0], "0.0") // dp/dt = 0
     equations.putAll( biosystem.getPrefixEquations() )
         
     
@@ -89,12 +272,91 @@ fun createCommandsForDrealRegularState1PminPmax( biosystem : BioSystem, state : 
         declareVariable("time_0", "0.0", maxT)
         // define the flow, set d par /dt = 0.0
         declareODE( equations )//ode flow
-        add(assertStr(conjunction(
+        if( ori1 == 0 ){
+            add(assertStr(conjunction(
+                integral0( allVars_t, allVars_0, "time_0"),//integrals
+                forallT(str(0.0), "time_0", getInRectangleCondition( biosystem, state ) ),
+                getOutsideFacetCondition( biosystem, state, dir2, ori2, "_t"),//goal _t
+                getDerivativePointsOutsideCondition( biosystem, state, dir2, ori2, "_t" )
+            )))    
+        }else{
+            add(assertStr(conjunction(
                 getDerivativePointsInsideCondition( biosystem, state, dir1, ori1, "_0" ),
                 integral0( allVars_t, allVars_0, "time_0"),//integrals
                 forallT(str(0.0), "time_0", getInRectangleCondition( biosystem, state ) ),
                 getOutsideFacetCondition( biosystem, state, dir2, ori2, "_t"),//goal _t
                 getDerivativePointsOutsideCondition( biosystem, state, dir2, ori2, "_t" )
+            )))
+        }
+        // end
+        add("(check-sat)")
+        add("(exit)")
+    }
+    
+    return command
+}
+/*
+ * pmin pmax Double,  for pwma systems
+ */
+fun createCommandsForDrealRegularState1PminPmaxPWMA( biosystem : BioSystemPWMA, state : Array<Int>, dir1: Int, ori1 : Int, dir2 : Int, ori2 : Int, pminD: Double, pmaxD : Double ) : ArrayList<String> {
+    var dim : Int = biosystem.getDim()
+    var maxT : String = biosystem.getMaxT()
+    var parCount : Int = biosystem.getParamCount()
+    
+    val parStrs : Array<String> = biosystem.getParStrings()
+    val varStrs : Array<String> = biosystem.getVarStrings()
+
+    var allVars : MutableList<String> = mutableListOf<String>()
+    allVars.addAll( parStrs )
+    allVars.addAll( varStrs )
+    var allVars_0 : MutableList<String> = mutableListOf<String>()
+    var allVars_t : MutableList<String> = mutableListOf<String>()
+    for( v in allVars ){
+        allVars_0.add( v+"_0")
+        allVars_t.add( v+"_t")
+    }
+    
+    var pmin : String = pminD.toBigDecimal().toPlainString()
+    var pmax : String = pmaxD.toBigDecimal().toPlainString()
+    
+    var equations : MutableMap<String,String> = mutableMapOf()
+    equations.put(parStrs[0], "0.0")
+    equations.putAll( biosystem.getPrefixDerStringsForRectangle(state) )
+        
+    
+    val command = ArrayList<String>().apply {
+        // beginning
+        add("(set-logic QF_NRA_ODE)")
+        // now add params
+        for( p in parStrs){
+                declareVariable(p, pmin, pmax)
+                declareVariable(p + "_0", pmin, pmax)
+                declareVariable(p + "_t", pmin, pmax)
+        }
+        // now add vars
+        for( i in 0..(dim-1) ){
+                var v : String = varStrs[i]
+                var vmin : String = biosystem.getMinTres( i )
+                var vmax : String = biosystem.getMaxTres( i )
+                //min max treshold in system
+                declareVariable(v, vmin, vmax)
+                //first facet condition
+                var vfacetmin : String = biosystem.getMinOnFacet( i, state, dir1, ori1 )
+                var vfacetmax : String = biosystem.getMaxOnFacet( i, state, dir1, ori1 )
+                declareVariable(v + "_0", vfacetmin, vfacetmax)
+                //min max treshold in system
+                declareVariable(v + "_t", vmin, vmax)
+        }
+        // now add time
+        declareVariable("time_0", "0.0", maxT)
+        // define the flow, set d par /dt = 0.0
+        declareODE( equations )//ode flow
+        add(assertStr(conjunction(
+                getDerivativePointsInsideConditionPWMA( biosystem, state, dir1, ori1, "_0" ),
+                integral0( allVars_t, allVars_0, "time_0"),//integrals
+                forallT(str(0.0), "time_0", getInRectangleConditionPWMA( biosystem, state ) ),
+                getOutsideFacetConditionPWMA( biosystem, state, dir2, ori2, "_t"),//goal _t
+                getDerivativePointsOutsideConditionPWMA( biosystem, state, dir2, ori2, "_t" )
             )))
         // end
         add("(check-sat)")
@@ -103,6 +365,7 @@ fun createCommandsForDrealRegularState1PminPmax( biosystem : BioSystem, state : 
     
     return command
 }
+
 
 
 /*
@@ -133,6 +396,66 @@ fun getDerivativePointsInsideCondition( biosystem : BioSystem, state : Array<Int
     return result
 }
 
+/* For specific values of p,q (strings of Double values)
+ * _0
+ * rectangular abstraction condition 
+ * on the first facet
+ */
+fun getDerivativePointsInsideConditionPQ(pStr : String, qStr : String, biosystem : BioSystem, state : Array<Int>, dir1 : Int, ori1 : Int, suffix : String ) : String {
+    var result : String =""
+    //rectangular condition at x_t deriv pointing outside
+    var dim : Int = biosystem.getDim()
+    val parStrs : Array<String> = biosystem.getParStrings()
+    val varStrs : Array<String> = biosystem.getVarStrings()
+    var deriv : String = ""
+    var der : String? = (biosystem.getPrefixEquations())[varStrs[dir1]]
+    der?.let {
+        deriv = der
+    }
+    for( i in 0..(dim-1) ) {
+        deriv = deriv.replace( varStrs[i], varStrs[i]+suffix )
+        deriv = deriv.replace( parStrs[0], pStr)
+        if(parStrs.size > 1) deriv = deriv.replace( parStrs[1], qStr)
+    }
+    //PARAMETER names do not figure in the derivatives now:
+    //deriv = deriv.replace( "p", "p"+suffix )
+    if(ori1 > 0) {//right end of rectangle
+        result = deriv.le("0.0")
+    } else {//left end of rectangle
+        result = deriv.ge("0.0")
+    }
+    return result
+}
+
+/* PWMA
+ * _0
+ * rectangular abstraction condition 
+ * on the first facet
+ */
+fun getDerivativePointsInsideConditionPWMA( biosystem : BioSystemPWMA, state : Array<Int>, dir1 : Int, ori1 : Int, suffix : String ) : String {
+    var result : String =""
+    //rectangular condition at x_t deriv pointing outside
+    var dim : Int = biosystem.getDim()
+    val varStrs : Array<String> = biosystem.getVarStrings()
+    var deriv : String = ""
+    var mapPrefixDers : Map<String,String> = (biosystem.getPrefixDerStringsForRectangle(state))
+    var der : String? = mapPrefixDers[varStrs[dir1]]
+    der?.let {
+        deriv = der
+    }
+    for( i in 0..(dim-1) ) {
+        deriv = deriv.replace( varStrs[i], varStrs[i]+suffix )
+    }
+    //TODO vic parametru
+    deriv = deriv.replace( "p", "p"+suffix )
+    if(ori1 > 0) {//right end of rectangle
+        result = deriv.le("0.0")
+    } else {//left end of rectangle
+        result = deriv.ge("0.0")
+    }
+    return result
+}
+
 /*
  * _t
  * rectangular abstraction condition 
@@ -145,6 +468,66 @@ fun getDerivativePointsOutsideCondition( biosystem : BioSystem, state : Array<In
     val varStrs : Array<String> = biosystem.getVarStrings()
     var deriv : String = ""
     var der : String? = (biosystem.getPrefixEquations())[varStrs[dir2]]
+    der?.let {
+        deriv = der
+    }
+    for( i in 0..(dim-1) ) {
+        deriv = deriv.replace( varStrs[i], varStrs[i]+suffix )
+    }
+    //TODO vic parametru
+    deriv = deriv.replace( "p", "p"+suffix )
+    if(ori2 > 0) {//right end of rectangle
+        result = deriv.ge("0.0")
+    } else {//left end of rectangle
+        result = deriv.le("0.0")
+    }
+    return result
+}
+
+/* Specific values of p,q, given as strings
+ * _t
+ * rectangular abstraction condition 
+ * on the second facet
+ */
+fun getDerivativePointsOutsideConditionPQ( pStr : String, qStr : String, biosystem : BioSystem, state : Array<Int>, dir2 : Int, ori2 : Int, suffix : String ) : String {
+    var result : String =""
+    //rectangular condition at x_t deriv pointing outside
+    var dim : Int = biosystem.getDim()
+    val parStrs : Array<String> = biosystem.getParStrings()
+    val varStrs : Array<String> = biosystem.getVarStrings()
+    var deriv : String = ""
+    var der : String? = (biosystem.getPrefixEquations())[varStrs[dir2]]
+    der?.let {
+        deriv = der
+    }
+    for( i in 0..(dim-1) ) {
+        deriv = deriv.replace( varStrs[i], varStrs[i]+suffix )
+        deriv = deriv.replace( parStrs[0], pStr)
+        if(parStrs.size > 1) deriv = deriv.replace( parStrs[1], qStr)
+    }
+    //PARAMs NAMEs do not appear in the ODE:
+    //deriv = deriv.replace( "p", "p"+suffix )
+    if(ori2 > 0) {//right end of rectangle
+        result = deriv.ge("0.0")
+    } else {//left end of rectangle
+        result = deriv.le("0.0")
+    }
+    return result
+}
+
+/*PWMA
+ * _t
+ * rectangular abstraction condition 
+ * on the second facet
+ */
+fun getDerivativePointsOutsideConditionPWMA( biosystem : BioSystemPWMA, state : Array<Int>, dir2 : Int, ori2 : Int, suffix : String ) : String {
+    var result : String =""
+    //rectangular condition at x_t deriv pointing outside
+    var dim : Int = biosystem.getDim()
+    val varStrs : Array<String> = biosystem.getVarStrings()
+    var deriv : String = ""
+    var mapPrefDers : Map<String,String> = biosystem.getPrefixDerStringsForRectangle(state)
+    var der : String? = mapPrefDers[varStrs[dir2]]
     der?.let {
         deriv = der
     }
@@ -242,13 +625,6 @@ fun getParameterSpaceCondition1Par( parStr : String, pmin : String, pmax : Strin
     return conjunction( (parStr+suffix).ge( pmin ), (parStr+suffix).le( pmax ) )
 }
 
-fun getParameterSpaceCondition() : String {
-    var result : String = ""
-        
-    return result
-}
-
-
 
 /*
  * Bounds for first facet
@@ -315,6 +691,24 @@ fun  getOutsideFacetCondition( biosystem : BioSystem, state : Array<Int>, dir2 :
     return result
 } 
 
+/*PWMA
+ * exploit the fact that the polytopes are rectangles and the trajectory
+ * is in the rectangle for whole time of integration
+ * it is sufficient to check that the dir2 th variable has value outside
+ * the rectangle on the right side of the rectangle
+ */
+fun  getOutsideFacetConditionPWMA( biosystem : BioSystemPWMA, state : Array<Int>, dir2 : Int, ori2 : Int, suffix : String ) : String {
+    var result : String = ""
+    val varStrs : Array<String> = biosystem.getVarStrings()
+
+    if( ori2 > 0 ) { //right end of rectangle
+                result = (varStrs[dir2]+suffix).ge( biosystem.getTres( dir2, state[dir2] + 1 ) )
+    } else { //ori2 < 0, left end of rectangle
+                result = (varStrs[dir2]+suffix).le( biosystem.getTres( dir2, state[dir2] ) )
+    }
+    return result
+} 
+
 /*
  * Bounds for second facet
  * on x_01 .. x_n1
@@ -366,6 +760,28 @@ fun getExitFacetCondition( system : BioSystem, state : Array<Int>, dir2 : Int, o
  * on x_0t .. x_nt
  */ 
 fun getInRectangleCondition( system : BioSystem, state : Array<Int> ) : String {
+    var dim : Int = system.getDim()
+    //there will be 2*dim conditions on being in the rectangle 
+    var bounds : Array<String> = Array<String>( 2* dim ){i -> ""}
+    
+    val varStrs : Array<String> = system.getVarStrings()
+    val suffix : String = "_t" //"_0_t"
+    var j : Int = 0 //which bound is current
+    for( i in 0..(dim-1) ) {
+        bounds[j] = (varStrs[i]+suffix).ge( system.getTres( i, state[i] ) )
+        j++
+        bounds[j] = (varStrs[i]+suffix).le( system.getTres( i, state[i] + 1 ) )
+        j++
+    }
+    
+    return conjunction( *bounds )
+}
+
+/* PWMA
+ * Bounds for the whole rectangle
+ * on x_0t .. x_nt
+ */ 
+fun getInRectangleConditionPWMA( system : BioSystemPWMA, state : Array<Int> ) : String {
     var dim : Int = system.getDim()
     //there will be 2*dim conditions on being in the rectangle 
     var bounds : Array<String> = Array<String>( 2* dim ){i -> ""}
