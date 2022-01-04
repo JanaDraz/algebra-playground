@@ -7,7 +7,7 @@ import org.junit.Assert
 import org.junit.Test
 
 class MaximaHelperTest : AbstractTest() {
-    
+
     @Test
     fun testGetResultFromMaxima() {
         val commandsForMaxima = ArrayList<String>().apply {
@@ -38,6 +38,29 @@ class MaximaHelperTest : AbstractTest() {
         print(map)
         Assert.assertEquals(map["goal"], "1/2")
         Assert.assertEquals(map["a"], "1")
-    }   
+    }
     
+    @Test
+    fun testCreateCommandsForMaximaLPTaskPar2Deg2(){
+        val pmin : Double = 1.0
+        val pmax : Double = 2.0
+        val qmin : Double = 1.0
+        val qmax : Double = 3.0
+        val pin : List<Double> = listOf<Double>(1.0, 2.0, 1.0)
+        val qin : List<Double> = listOf<Double>(1.0, 2.0, 3.0)
+        val pout : List<Double> = listOf<Double>(1.0, 1.5, 1.5, 1.5, 2.0, 2.0)
+        val qout : List<Double> = listOf<Double>(2.0, 1.0, 2.0, 3.0, 1.0, 3.0)
+        val commandsForMaxima : ArrayList<String> = createCommandsForMaximaLPTaskPar2Deg2(pmin, pmax, qmin, qmax, pin, qin, pout, qout, "")
+ 
+        val resultStr = getResultFromMaxima(commandsForMaxima)
+        /*( c in resultStr){
+            println( c )
+        }*/
+        val resultLine = digResultLinesFromMaxima( resultStr )
+        println(resultLine)
+        var map : MutableMap<String,String> = getCoefMapFromResultLine( resultLine )
+        print(map)
+        Assert.assertEquals(map["goal"], "1.333333333333333")
+        Assert.assertEquals(map["a"], "0.0")
+    }
 }
