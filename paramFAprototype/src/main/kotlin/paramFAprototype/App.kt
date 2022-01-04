@@ -19,20 +19,267 @@ class App {
         }
 }
 
+fun exampleLVP(){
+    //just one parameter 3 rectangles find out the directions of flow
+    var systemLVexample : BioSystem = getBioSystemByName( "CASE-EXAMPLE-LV-1PAR" )
+    var divideP : Int = 5
+    
+    var slodiCA : SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVexample, arrayOf(2,1), 0, 1, 0, -1, 0.01, divideP )//deltaI 0.01, maxdivide steps 10
+    
+    var slodiAB: SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVexample, arrayOf(1,1), 0, 1, 0, -1, 0.01, divideP )
+    
+    var slodiBA: SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVexample, arrayOf(0,1), 1, 1, 0, 1, 0.01, divideP )
+    systemLVexample.setMaxT( "20.0" ) //state with the equilibrium for some pars, the solutions slow down
+    
+    var slodiAC: SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVexample, arrayOf(1,1), 0, -1, 0, 1, 0.01, divideP )
+    
+    println("CASE-EXAMPLE-LV-1PAR p:")
+    println("C->A for p in "+slodiCA.toString()) //C->A for p in {[0.16250000000000003,0.5]}
+    println("A->B for p in "+slodiAB.toString()) //A->B for p in {[0.2,0.5]}
+    println("B->A for p in "+slodiBA.toString()) //B->A for p in {[0.1,0.15000000000000002]}
+    println("A->C for p in "+slodiAC.toString()) //A->C for p in {[0.1,0.15000000000000002]}
+}
+
+fun exampleLVP_sampling(){
+    //just one parameter 3 rectangles find out the directions of flow
+    var systemLVexample : BioSystem = getBioSystemByName( "CASE-EXAMPLE-LV-1PAR" )
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.001
+    
+    var slodiCA : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVexample, arrayOf(2,1), 0, 1, 0, -1, delta1, delta2 )
+    
+    var slodiAB: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVexample, arrayOf(1,1), 0, 1, 0, -1, delta1, delta2 )
+    
+    var slodiBA: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVexample, arrayOf(2,1), 0, 1, 0, -1, delta1, delta2 )
+    systemLVexample.setMaxT( "20.0" ) //state with the equilibrium for some pars, the solutions slow down
+    
+    var slodiAC: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVexample, arrayOf(2,1), 0, 1, 0, -1, delta1, delta2 )
+
+    println("CASE-EXAMPLE-LV-1PAR p:")           //v results for whole intervals method below
+    println("C->A for p in "+slodiCA.toString()) //C->A for p in {[0.16250000000000003,0.5]}
+    println("A->B for p in "+slodiAB.toString()) //A->B for p in {[0.2,0.5]}
+    println("B->A for p in "+slodiBA.toString()) //B->A for p in {[0.1,0.15000000000000002]}
+    println("A->C for p in "+slodiAC.toString()) //A->C for p in {[0.1,0.15000000000000002]}
+/* results for sampling methods below
+ CASE-EXAMPLE-LV-1PAR p: 0.1,0.01
+C->A for p in {(0.16250000000000003,0.5]}
+A->B for p in {(0.20625000000000002,0.5]}
+B->A for p in {(0.16250000000000003,0.5]}
+A->C for p in {(0.16250000000000003,0.5]}
+* 
+CASE-EXAMPLE-LV-1PAR p: 0.01, 0.001
+C->A for p in {(0.16718750000000002,0.5]}
+A->B for p in {(0.20703125,0.5]}
+B->A for p in {(0.16718750000000002,0.5]}
+A->C for p in {(0.16640625000000003,0.5]}
+ */
+}
+
+
+fun caseStudyLVPPSquared(){
+ //p,p^2 one parameter synthesis
+    
+    var systemLVp : BioSystem = getBioSystemByName( "CASE000aLVPARSQUARED" )
+    var divideP : Int = 5
+    
+    //result as a slodi
+//    var slodi_CA : SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVp, arrayOf(2,1), 0, 1, 0, -1, 0.01, divideP )//deltaI 0.01, maxdivide steps
+//    var slodi_AB: SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVp, arrayOf(1,1), 0, 1, 0, -1, 0.01, divideP )
+    //try to catch even the slower evolution of the solutions
+//    systemLVp.setMaxT( "20.0" )
+//    var slodi_BA: SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVp, arrayOf(0,1), 1, 1, 0, 1, 0.01, divideP )//may need 1,1 ingoing facet
+    systemLVp.setMaxT( "30.0" )
+    var slodi_AC: SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVp, arrayOf(1,1), 0, -1, 0, 1, 0.01, divideP )
+    
+    println("CASE000a LV PARSQUARED p:")
+//    println("C->A for p in "+slodi_CA.toString())//C->A for p in {[0.1875,0.5]}
+//    println("A->B for p in "+slodi_AB.toString())//A->B for p in {[0.17500000000000002,0.5]}
+//    println("B->A for p in "+slodi_BA.toString())//B->A for p in {[0.1,0.125]}
+    //^for dir1=0,or1=-1
+    println("A->C for p in "+slodi_AC.toString())//A->C for p in {} ... jeste delsi cas?
+    
+    //several transitions - some kind of reachability
+    //p, p^2 vs p, q - look for behaviours that can differ for par valuations
+    //as moving the centre of the loop, under and above (left,right)
+    //of the state rectangle p=0.1 vs p=0.2, q=0.01 vs q=0.04,5,6
+}
+
+fun caseStudyLVPPSquared_sampling(){
+ //p,p^2 one parameter synthesis
+    
+    var systemLVp : BioSystem = getBioSystemByName( "CASE000aLVPARSQUARED" )
+    var delta1 : Double = 0.001
+    var delta2 : Double = 0.001
+    
+    //result as a slodi
+//    var slodi_CA : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(2,1), 0, 1, 0, -1, delta1, delta2 )
+
+//    var slodi_AB: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(1,1), 0, 1, 0, -1, delta1, delta2 )
+
+    //try to catch even the slower evolution of the solutions
+    systemLVp.setMaxT( "30.0" )
+    var slodi_BA: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(0,1), 1, 1, 0, 1, delta1, delta2 )//may need 1,1 ingoing facet
+
+    systemLVp.setMaxT( "40.0" )
+    var slodi_AC: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(1,1), 0, -1, 0, 1, delta1, delta2 )
+    
+    println("CASE000a LV PARSQUARED p sampling, d1=$delta1, d2=$delta2:")
+                                                    //whole intervals for comparison:
+//    println("C->A for p in "+slodi_CA.toString()) //C->A for p in {[0.1875,0.5]}
+//    println("A->B for p in "+slodi_AB.toString()) //A->B for p in {[0.17500000000000002,0.5]}
+    println("B->A for p in "+slodi_BA.toString())   //B->A for p in {[0.1,0.125]}
+    //^for dir1=0,or1=-1
+    println("A->C for p in "+slodi_AC.toString())   //A->C for p in {} ... jeste delsi cas?
+    
+    //several transitions - some kind of reachability
+    //p, p^2 vs p, q - look for behaviours that can differ for par valuations
+    //as moving the centre of the loop, under and above (left,right)
+    //of the state rectangle p=0.1 vs p=0.2, q=0.01 vs q=0.04,5,6
+    
+    //sampling results delta1=0.1,delta2=0.01:
+    /*CASE000a LV PARSQUARED p sampling:
+     * times 10,10,20,30
+    C->A for p in {(0.1875,0.5]}
+    A->B for p in {(0.18125000000000002,0.5]}
+    B->A for p in {}
+    A->C for p in {} 
+    * times 10,10,30,40 stejny vysledek 
+    CASE000a LV PARSQUARED p sampling:
+    C->A for p in {(0.1875,0.5]}
+    A->B for p in {(0.18125000000000002,0.5]}
+    B->A for p in {}
+    A->C for p in {}
+    * */
+    //sampling results delta1=0.01,delta2=0.001:
+    //times 10,10,20,30:
+    /*
+     CASE000a LV PARSQUARED p sampling:
+    C->A for p in {(0.18875000000000006,0.5]}
+    A->B for p in {(0.18500000000000005,0.5]}
+    B->A for p in {}
+    A->C for p in {}
+     */
+}
+
+fun caseStudyLVPQ(){
+ //p,q two parameters synthesis
+    var systemLVpq : BioSystem = getBioSystemByName( "CASE000bLVMULTIPARS" )
+    //sample parameter space, check by dreal one transition
+    //approximate the set of delta-sat par vals
+    //findSemialgebraicFor2ParamsSimple(pmin: Double , pmax: Double, qmin: Double , qmax: Double, system : BioSystem, state1 : Array<Int>, dir1: Int, ori1 : Int, dir2 : Int, ori2 : Int, divideStepsP : Int, divideStepsQ : Int)
+    
+    //admissible valuations p in [0.1,0.5], q in [0.01,0.06]
+    var divideP : Int = 100
+    var divideQ : Int = 10
+    
+    var semiAlgStrCA : String = findSemialgebraicFor2ParamsSimpleShift(0.1, 0.5, 0.01, 0.06, systemLVpq, arrayOf(2,1), 0, 1, 0, -1, divideP, divideQ )
+    var semiAlgStrAB : String = findSemialgebraicFor2ParamsSimpleShift(0.1, 0.5, 0.01, 0.06, systemLVpq, arrayOf(1,1), 0, 1, 0, -1, divideP, divideQ ) 
+    //try to catch even the slower evolution of the solutions
+    systemLVpq.setMaxT( "20.0" )
+    var semiAlgStrBA : String = findSemialgebraicFor2ParamsSimpleShift(0.1, 0.5, 0.01, 0.06, systemLVpq, arrayOf(0,1), 1, 1, 0, 1, divideP, divideQ ) //may need 1,1 ingoing facet
+    var semiAlgStrAC : String = findSemialgebraicFor2ParamsSimpleShift(0.1, 0.5, 0.01, 0.06, systemLVpq, arrayOf(1,1), 0, -1, 0, 1, divideP, divideQ )
+    
+    println("CASE000b LV MULTIPARS p,q:")
+    println( "C->A for p,q satisfying "+semiAlgStrCA )
+    println( "A->B for p,q satisfying "+semiAlgStrAB )
+    println( "B->A for p,q satisfying "+semiAlgStrBA )
+    println( "A->C for p,q satisfying "+semiAlgStrAC )
+    /* CASE000b LV MULTIPARS p,q: B->A is 1,1 ingoing, timemax for B->A and A->C was 20.0, divide p 100x ,q 10x: VYSLEDKY-PQ-100-10.txt     */
+    /* CASE000b LV MULTIPARS p,q: B->A is 1,1 ingoing, timemax for B->A and A->C was 20.0, divide p,q 10x - in .ods     */
+    /*
+     CASE000b LV MULTIPARS p,q: B->A is 0,-1 ingoing, timemax for B->A and A->C was 20.0, divide p,q 5x:
+C->A for p,q satisfying (p >= 0.1) and (p <= 0.5) and (q >= 0.01) and (q <= 0.06) and (( ( - 444089209850064375000000000000000000000000000000*p         - 2312964634635748200000000000000000000000000000000*p*q         + 426510678626832488418891216574850000000000000000*p                                                              2         + 1776356839400269680000000000000000000000000000000*q         + 854501654619830731910991183458072000000000000000*q         + 19999999999999909217358922172000513583563788220247298384423097)       /20000000000000000000000000000000000000000000000000000000000000) >= 1)
+A->B for p,q satisfying (p >= 0.1) and (p <= 0.5) and (q >= 0.01) and (q <= 0.06) and (( ( - 31249999999999961250000000000000000000000000000000*p         + 3622665293346165000000000000000000*p*q         + 23749999999999970985149540160687325000000000000000*p                                                 2         + 106581410364014568000000000000000000*q         - 8402591701751023601467883534172600*q         - 2062499999999994957554365762973125270911059191897)       /2000000000000000000000000000000000000000000000000) >= 1)
+B->A for p,q satisfying (p >= 0.1) and (p <= 0.5) and (q >= 0.01) and (q <= 0.06) and (( (691731770833333125000000000000000000000000000000*p         - 1953124999999998000000000000000000000000000000000*p*q         - 467122395833333593384100868698350000000000000000*p                                                               2         + 15624999999999936000000000000000000000000000000000*q         - 273437499999995898677081231719920000000000000000*q         + 92919921875000027051219770386355157865131918733)       /50000000000000000000000000000000000000000000000) >= 1)
+A->C for p,q satisfying (p >= 0.1) and (p <= 0.5) and (q >= 0.01) and (q <= 0.06) and (( (13020833333333343750000000000000000000000000000000*p         + 70288425285875535000000000000000000*p*q         - 9895833333333342147976372989806225000000000000000*p                                                 2         + 290405559682043280000000000000000000*q         - 38844956058354934938096129525378600*q         + 1859375000000002014357764493835096484771680688401)       /1000000000000000000000000000000000000000000000000) >= 1)
+
+*/
+}
+
+fun caseStudyLVReachability(){
+    var systemLVReach1 : BioSystem = getBioSystemByName( "CASE000cLV1PARMORETRES" )
+    //init
+    //constraints
+    //call reachability
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( 0.1, 0.5, systemLVReach1, arrayOf(40,10), 1,-1, listOf<ConstraintReachable>( ConstraintReachable(0,false, 0.2)), delta1, delta2 )
+    println( slodi )
+}
+
+fun caseStudyLVSmallReachability(){
+    var systemLVReach1 : BioSystem = getBioSystemByName( "CASE-EXAMPLE-LV-1PAR" )
+    //init
+    //constraints
+    //call reachability
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( 0.1, 0.5, systemLVReach1, arrayOf(1,1), 1,-1, listOf<ConstraintReachable>( ConstraintReachable(0,true, 0.5)), delta1, delta2 )
+    println( slodi )
+}
+
+
+fun caseStudySEIR(){
+    //CASE001aSEIR1par
+    //add the initial rectangle state
+    var systemSEIRp : BioSystem = getBioSystemByName( "CASE001aSEIR1par" )
+    
+    //For which b in [0.1,100] the number of S is decreasing?
+    //all b in [0.1,100] maxT = 20 (days)
+//    var dSlodi : SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 100.0, systemSEIRp, arrayOf(13,0,0,0), 0, 0, 0, -1, 0.01, 2 )
+    
+    // (and first to increase is E)? maxT = 10
+//    var dSlodi : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL(0.1, 10.0, systemSEIRp, arrayOf(13,0,0,0), 0, 0, 1, 1, 0.5, 0.01)
+    
+//    println( dSlodi.toString() )
+    //findSlodiFor1ParamDouble( 0.1, 10.0, systemSEIRp, arrayOf(13,0,0,0), 0, 0, 1, 1, 0.01, 2 )
+    
+    //CASE001bSEIRmpar
+    
+}
+
+fun caseStudyRepressilator3D(){
+    
+}
+
+
 fun main(args: Array<String>) {
+    
+//DONE    exampleLVP()
+
+//    exampleLVP_sampling()
+    
+//    caseStudyLVPPSquared()
+
+//    caseStudyLVPPSquared_sampling()
+
+//    caseStudyLVPQ()
+
+    caseStudyLVReachability()
+
+    //*caseStudyLVSmallReachability()
+    
+    //simplifyAPolynomialExpression( "(1.0 + 2.1)*x-(20*p-1.0008)*(0.0000001-0.0000009)*x")
+    
+    //var reduceOutput : List<String> = simplifyAPolynomialExpression( "(p>=0.1)and(((0+0.05263157894736788)*(20.0*p+-3.0000000000000004)*(66.66666666666667*q+-1.6666666666666667)+(0+0.05263157894736788)*(20.0*p+-3.0000000000000004)*(66.66666666666667*q+-1.6666666666666667)+(0+0.05263157894736788)*(20.0*p+-3.0000000000000004)*(66.66666666666667*q+-1.6666666666666667)+(0+3.31423485147146e-17)*(20.0*p+-3.0000000000000004)+(0+0.1473684210526302)*(66.66666666666667*q+-1.6666666666666667)+0)>=1)")    
+        
+    //var simplPol : String = parseSimplifiedPolynomialExpressionResultFromReduceOutput( reduceOutput )
+    //println( simplPol ) 
+ 
+//    caseStudySEIR()
     //val polynoms : List<String> = listOf("x^2+1","x+1","x^3+x","0","p^2-p-2","2*x+1")
     
     //for( pol in polynoms )
     //    println( getRoots( pol ) )//will print out the result
         
-    var examplesStrs = arrayOf("001sys","002sys","003LV","004POL","005ROS")
-    var numero = 1
-    var parRangesMin = arrayOf(-5.0f, -5.0f, 0.0f, 0.1f, 5.7f)
-    var parRangesMax = arrayOf(5.0f,  5.0f,  3.0f, 4.0f, 14.0f)
-        
-    for( numero in 0..4 ) {
-        var example1 : BioSystem = getBioSystemByName( examplesStrs[numero] )
-        println("Biosystem "+numero+" loaded.")
+//    var examplesStrs = arrayOf("001sys","002sys","003LV","004POL","005ROS")
+//    var numero = 1
+//    var parRangesMin = arrayOf(-5.0, -5.0, 0.0, 0.1, 5.7)
+//    var parRangesMax = arrayOf(5.0,  5.0,  3.0, 4.0, 14.0)
+//        
+//    for( numero in 0..4 ) {
+//        var example1 : BioSystem = getBioSystemByName( examplesStrs[numero] )
+//        println("Biosystem "+numero+" loaded.")
     
     //getParamSetForSequenceOfRectangles( dirori : Int, states : Array<Array<Int>>, system : BioSystem, steps : Int, method : String ) : SortedListOfDisjunctIntervals
     //var parSet : SortedListOfDisjunctIntervals = getParamSetForSequenceOfRectangles( 0, arrayOf( arrayOf(0,0), arrayOf(1,0) ), example1, 1,"QEL-Reduce")
@@ -47,14 +294,14 @@ fun main(args: Array<String>) {
     var drealResult = getResultFromDreal( commands )
 
     println( drealResult )*/
-        var minp : Float = parRangesMin[ numero ]
-        var maxp : Float = parRangesMax[ numero ]
-            
-        if( numero < 4 )
-            println( encodeAndCheck( minp , maxp, example1, arrayOf(0,0), 0,-1,0,1, 0.1f, 10 ) )
-        else
-            println( encodeAndCheck( minp , maxp, example1, arrayOf(0,0,0), 0,-1,0,1, 0.1f, 10 ) )
-    }
+//      var minp : Double = parRangesMin[ numero ]
+//        var maxp : Double = parRangesMax[ numero ]
+//            
+//        if( numero < 4 )
+//            println( encodeAndCheck( minp , maxp, example1, arrayOf(0,0), 0,-1,0,1, 0.1, 10 ) )
+//        else
+//            println( encodeAndCheck( minp , maxp, example1, arrayOf(0,0,0), 0,-1,0,1, 0.1, 10 ) )
+//    }
     /*var commandsFile : String = "/home/jfabriko/PROGRAMOVANI/rings-pokusy/sgradlem/drealInput5.smt2"
     println( getResultFromDrealFile( commandsFile ) )
     */
@@ -69,4 +316,6 @@ fun main(args: Array<String>) {
     
     //print hello world
     //println( App().greeting )
+    
+    
 }
