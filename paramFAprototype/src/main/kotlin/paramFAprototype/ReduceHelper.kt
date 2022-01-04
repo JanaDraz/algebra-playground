@@ -3,6 +3,26 @@ package paramFAprototype
 import java.io.File
 import kotlin.collections.ArrayList
 
+fun simplifyAPolynomialExpression( polyexp : String ) : List<String> {
+    var commands : ArrayList<String> = createReduceCommandsForPolynomialExpression(polyexp)
+    var reduceOutput : List<String> = getResultFromReduce( commands )
+    //println( reduceOutput )
+    return reduceOutput
+}
+
+fun createReduceCommandsForPolynomialExpression( polyexpr : String ): ArrayList<String> {
+    val command = ArrayList<String>().apply{
+        add("load_package redlog;")
+        add("rlset reals;")
+        add("off rlverbose;")
+        add("on EXP;")
+        add("off RATPRI;")
+        add("phi := $polyexpr;")
+        //add("psi := ;")
+        add("quit;")
+    }
+    return command
+}
 
 fun createReduceCommandsForFormula(formula: String): ArrayList<String> {
     val command = ArrayList<String>().apply {
@@ -44,6 +64,7 @@ fun digResultFromReduceOutput(output1: List<String>): String {
     return "$resultPart \nWhole result: $resultAll" //trying to find the relevant qel part
 }
 
+
 fun getResultFromReduce(commandsForReduce: ArrayList<String>): List<String> {
     val tempFile = File.createTempFile("input", ".txt")
     tempFile.writeText(commandsForReduce.joinToString(separator = "\n"))
@@ -52,6 +73,20 @@ fun getResultFromReduce(commandsForReduce: ArrayList<String>): List<String> {
     val output1 = process.inputStream.bufferedReader().readLines()
 
     return output1 //digResultFromReduceOutput(output1)
+}
+
+fun parseSimplifiedPolynomialExpressionResultFromReduceOutput( output : List<String>) : String {
+    var result : String = ""
+    var insideResult : Boolean = false
+    for( line in output ){
+        if( line.contains( "7:") ){ break; }
+        if( insideResult ){ result = result + line }
+        if( line.contains( "phi :=" ) ){ 
+            insideResult = true
+            result = result + line.substringAfter("phi :=")
+        }      
+    }
+    return result
 }
 
 /* If the commands contain "off nat" it should produce the output on a
