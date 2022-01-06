@@ -5,7 +5,7 @@ import java.io.File
 fun getResultFromDreal(commandsForDreal: ArrayList<String>): List<String> {
     val tempFile = File.createTempFile("input", ".smt2")
     tempFile.writeText(commandsForDreal.joinToString(separator = "\n"))
-    val process = Runtime.getRuntime().exec(arrayOf("/home/jfabriko/PROGRAMOVANI/dReal-3.16.06.02-linux/bin/dReal", "--visualize", 
+    val process = Runtime.getRuntime().exec(arrayOf("/ADD HERE YOUR PATH TO DREAL/dReal-3.16.06.02-linux/bin/dReal", "--visualize", 
         tempFile.absolutePath))
     val output1 = process.inputStream.bufferedReader().readLines()
 
@@ -27,7 +27,7 @@ fun checkCommandsDreal( commands : ArrayList<String>) : Boolean {
  * filename should be an absolute path to dreal commands
  */
 fun getResultFromDrealFile( filename : String) : List<String> {
-    val process = Runtime.getRuntime().exec(arrayOf("/home/jfabriko/PROGRAMOVANI/dReal-3.16.06.02-linux/bin/dReal", "--visualize", 
+    val process = Runtime.getRuntime().exec(arrayOf("/ADD HERE YOUR PATH TO DREAL/dReal-3.16.06.02-linux/bin/dReal", "--visualize", 
         filename ))
     val output1 = process.inputStream.bufferedReader().readLines()
 
@@ -38,7 +38,7 @@ fun getResultFromDrealFile( filename : String) : List<String> {
 fun getResultFromDreach(commandsForDreach: ArrayList<String>): List<String> {
     val tempFile = File.createTempFile("input", ".drh")
     tempFile.writeText(commandsForDreach.joinToString(separator = "\n"))
-    val process = Runtime.getRuntime().exec(arrayOf("/home/jfabriko/PROGRAMOVANI/dReal-3.16.06.02-linux/bin/dReach",
+    val process = Runtime.getRuntime().exec(arrayOf("/ADD HERE YOUR PATH TO DREAL/dReal-3.16.06.02-linux/bin/dReach",
         tempFile.absolutePath))
     val output1 = process.inputStream.bufferedReader().readLines()
 
