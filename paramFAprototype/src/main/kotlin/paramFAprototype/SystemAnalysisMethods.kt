@@ -10,6 +10,12 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomial
 import java.util.Queue
 import java.util.LinkedList
 
+import java.util.concurrent.CompletableFuture
+import java.util.function.Supplier
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+
 /*TODO:
  * Main tasks:
  * - given coordinates of a rectangle + direction, orientation,
@@ -388,6 +394,8 @@ fun getParamSetForTransition( dirori1 : Int, state1 : Array<Int>, state2 : Array
  * Divide the parameter set and delete intervals where no
  * suitable valuation exists.
  * Given granularity - max times to divide, and minimal length deltaI.
+ * THIS METHOD IS NOT IMPLEMENTED, DUMMY FOR UPPER IF FROM ANOTHER FILE?
+ * DREAL CHECKING IS ELSEWHERE
 */
 fun getParamSetForTransitionExistDREAL( dirori1 : Int, state1 : Array<Int>, state2 : Array<Int>, system : BioSystem, steps : Int = 2, deltaI : Float = 0.01f, maxDivideSteps : Int = 10 ) : SortedListOfDisjunctIntervals {
     //identify direction and orientation of facet between the states
@@ -411,6 +419,10 @@ fun getParamSetForTransitionExistDREAL( dirori1 : Int, state1 : Array<Int>, stat
     return slodi
 }
 
+/* Check one rectangle with given entry facet and exit facet,
+ * pmin pmax admissible valuations bounds,
+ * return set of intervals where valid valuations exist inside.
+ */
 fun encodeAndCheck( pmin: Double , pmax: Double, system : BioSystem, state1 : Array<Int>, dir1: Int, ori1 : Int, dir2 : Int, ori2 : Int, deltaI : Double = 0.01, maxDivideSteps : Int = 10 ) : String {
     var result : String = ""
     //encode
@@ -446,6 +458,8 @@ fun encodeAndCheck( pmin: Double , pmax: Double, system : BioSystem, state1 : Ar
  * Simple version + shifting the interval from pmin,pmax to min(pin),max(pin)
  * is just to sample the pmin,pmax x qmin,qmax interval,
  * (still without dividing it via algorithm.)
+ * 
+ * Better is to not shift...
  */
 fun findSemialgebraicFor2ParamsSimpleShift(pmin: Double , pmax: Double, qmin: Double , qmax: Double, system : BioSystem, state1 : Array<Int>, dir1: Int, ori1 : Int, dir2 : Int, ori2 : Int, divideStepsP : Int, divideStepsQ : Int) : String {
     var result : String = ""
@@ -709,7 +723,7 @@ fun readMap(map: Map<String,String>, entry:String): String {
  */
  
 //here  
-
+//DREAL REASONING
 /* Debug - the right S.L.O.D.I.
  * Find the set of valuations for one parameter. Return as
  * a sorted list of disjunct intervals.
@@ -1116,14 +1130,14 @@ fun getListOfSuccessorsAndParameterSets( state : Array<Int>, entryVar : Int, ent
     for( vari in 0..(n-1) ){
         //upper neighbour if exists
         if( state[vari] < (biosystem.getTresCount(vari)-1) ){
-            var slodi1 : SortedListOfDisjunctIntervalsDouble =       get1ParamSetForTransitionSampleDREAL( pmin, pmax, biosystem, state, entryVar, entryDir, vari, 1, delta1, delta2 )
+            var slodi1 : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( pmin, pmax, biosystem, state, entryVar, entryDir, vari, 1, delta1, delta2 )
             if( slodi1.isNonempty() ){
                 result.add( Pair< Array<Int>, SortedListOfDisjunctIntervalsDouble >(getUpperNeighbourOn( vari, state ), slodi1) )
             }
         }
         //lower neighbour if exists
         if( state[vari] > 0 ){
-            var slodi2 : SortedListOfDisjunctIntervalsDouble =       get1ParamSetForTransitionSampleDREAL( pmin, pmax, biosystem, state, entryVar, entryDir, vari, -1, delta1, delta2 )
+            var slodi2 : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( pmin, pmax, biosystem, state, entryVar, entryDir, vari, -1, delta1, delta2 )
             if( slodi2.isNonempty() ){
                 result.add( Pair< Array<Int>, SortedListOfDisjunctIntervalsDouble >(getLowerNeighbourOn( vari, state ), slodi2) )
             }
@@ -1133,6 +1147,234 @@ fun getListOfSuccessorsAndParameterSets( state : Array<Int>, entryVar : Int, ent
     return result
 }
 
+
+/* version combined with the QDA abstraction (calling Python a alternative to
+ * a very long computation of a state by DREAL
+ * version with FUTURES, despite the prototype functions this does not
+ */
+fun getListOfSuccessorsAndParameterSetsCOMBINEDfutures( stateAndPar : QueueItem, biosystem : BioSystem, delta1 : Double, delta2 : Double ) : List< QueueItem > {
+    var result : MutableList< QueueItem > = mutableListOf<QueueItem> ()
+    
+    //take all the possible 2n facets (staying forever is not usable for reachability)
+    //determine the successors with nonempty set of parameters
+    //put them into the list of results
+    val n : Int = biosystem.getDim()
+    var state : Array<Int> = stateAndPar.getR()
+    var entryDir : Int = stateAndPar.getDir()
+    var entryOr : Int = stateAndPar.getOr()
+    var slodi : SortedListOfDisjunctIntervalsDouble = stateAndPar.getSlodi()
+    
+    for( inter in slodi.getIntervals() ){
+        /*HERE starts the part that is in this combined version threaded
+         * and if the thread takes too long, it would be stopped and 
+         * replaced by QDA Python script */
+         
+        //atomic int var for checking which was first (FA 1, QDA 2)
+        //two resultsets FA and QDA
+        val resultFA = mutableListOf<QueueItem>()
+        val resultQDA = mutableListOf<QueueItem>()
+        val firstComplete = AtomicInteger( 0 )
+        
+        val future = CompletableFuture.anyOf(
+            CompletableFuture.supplyAsync( Supplier {
+                for( vari in 0..(n-1) ){
+                    println("FA: vari=$vari")
+                    //upper neighbour if exists [i,i+1]->[i+1,i+2] all have to be tresholds
+                    if( state[vari] < (biosystem.getTresCount(vari)-2) ){
+                        var slodi1 : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, 1, delta1, delta2 )
+                        if( slodi1.isNonempty() ){
+                            resultFA.add( QueueItem( getUpperNeighbourOn( vari, state ), vari, -1, slodi1 ) )
+                        }
+                    }
+                    //lower neighbour if exists
+                    if( state[vari] > 0 ){
+                        var slodi2 : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, -1, delta1, delta2 )
+                        if( slodi2.isNonempty() ){
+                            resultFA.add( QueueItem( getLowerNeighbourOn( vari, state ), vari, 1, slodi2 ) )
+                        }
+                    }
+                }
+                println("FA: complete")
+                firstComplete.set( 1 )
+            } ),
+            CompletableFuture.supplyAsync( Supplier {
+                println("QDA: start")
+                //call the Python script that computes QDA 
+                //successors and par sets list
+                val biosystemStr = biosystem.getName()
+                val rStr = rectangleHash( state )
+                val eDirStr = entryDir.toString()
+                var eOriStr : String = ""
+                if( entryOr == 1) { 
+                    eOriStr = "1" //entryOr.toString()
+                }else{ //entryOr ==-1, we want "0" for Python
+                    eOriStr = "0"
+                }
+                val pminStr = inter.getLe().toString()
+                val pmaxStr = inter.getRi().toString()
+                val deltaStr = delta1.toString()
+                val maxTstr = biosystem.getMaxT()
+                val resultQDA = getResultFor1paramFromPython( biosystemStr, rStr, eDirStr, eOriStr, pminStr, pmaxStr, deltaStr, maxTstr )
+                println("QDA: complete")
+                firstComplete.set( 2 )
+            } ) 
+        ).thenApply{
+            //depending on the value of the atomic var, assign the result 
+            //that has been computed completely
+            if( firstComplete.get() == 1 ){
+                println("F")
+                result = resultFA
+            } else if (firstComplete.get() == 2){
+                println("Q")
+                result = resultQDA
+            } else {
+                println("N")
+            }
+        }
+        /*HERE ends the replaced code for the combined version*/
+        //assign the completed resultset to result
+    }
+    
+    return result
+}
+
+/* version combined with the QDA abstraction (calling Python a alternative to
+ * a very long computation of a state by DREAL
+ * a version using Executors and timeout
+ */
+fun getListOfSuccessorsAndParameterSetsCOMBINEDtimeout( stateAndPar : QueueItem, biosystem : BioSystem, delta1 : Double, delta2 : Double ) : List< QueueItem > {
+    var result : MutableList< QueueItem > = mutableListOf<QueueItem> ()
+    
+    //take all the possible 2n facets (staying forever is not usable for reachability)
+    //determine the successors with nonempty set of parameters
+    //put them into the list of results
+    val n : Int = biosystem.getDim()
+    var state : Array<Int> = stateAndPar.getR()
+    var entryDir : Int = stateAndPar.getDir()
+    var entryOr : Int = stateAndPar.getOr()
+    var slodi : SortedListOfDisjunctIntervalsDouble = stateAndPar.getSlodi()
+    
+    for( inter in slodi.getIntervals() ){
+        /*HERE starts the part that is in this combined version threaded
+         * and if the thread takes too long, it would be stopped and 
+         * replaced by QDA Python script */
+         
+        //atomic int var for checking which was first (FA 1, QDA 2)
+        //two resultsets FA and QDA
+        val resultFA = mutableListOf<QueueItem>()
+        var resultQDA = mutableListOf<QueueItem>()
+        val firstComplete = AtomicInteger( 0 )
+        
+        val executor = Executors.newFixedThreadPool(1)
+        
+        val future = CompletableFuture.supplyAsync( Supplier {
+                for( vari in 0..(n-1) ){
+                    //println("FA: vari=$vari")
+                    //upper neighbour if exists [i,i+1]->[i+1,i+2] all have to be tresholds
+                    if( state[vari] < (biosystem.getTresCount(vari)-2) ){
+                        var slodi1 : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, 1, delta1, delta2 )
+                        if( slodi1.isNonempty() ){
+                            resultFA.add( QueueItem( getUpperNeighbourOn( vari, state ), vari, -1, slodi1 ) )
+                        }
+                    }
+                    //lower neighbour if exists
+                    if( state[vari] > 0 ){
+                        var slodi2 : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, -1, delta1, delta2 )
+                        if( slodi2.isNonempty() ){
+                            resultFA.add( QueueItem( getLowerNeighbourOn( vari, state ), vari, 1, slodi2 ) )
+                        }
+                    }
+                }
+                //Thread.sleep(5*60*1000)//5 minutes sleep, not now
+                //println("FA: complete")
+                if( firstComplete.get() == 0 ){ firstComplete.set( 1 ) }
+            }, executor )
+            /*future.thenApply{
+                //depending on the value of the atomic var, assign the result 
+                //that has been computed completely
+                if( firstComplete.get() == 1 ){
+                    println("F")
+                    result.addAll( resultFA )
+                } 
+            }*/
+            executor.shutdown()
+            executor.awaitTermination(60, TimeUnit.SECONDS )
+            if( firstComplete.get() == 1 ){
+                    println("F")
+                    result.addAll( resultFA )
+                } else {
+                    println("Q")
+                    //println("QDA: start")
+                    //call the Python script that computes QDA 
+                    //successors and par sets list
+                    val biosystemStr = biosystem.getName()
+                    val rStr = rectangleHash( state )
+                    val eDirStr = entryDir.toString()
+                    var eOriStr : String = ""
+                    if( entryOr == 1) { 
+                        eOriStr = "1" //entryOr.toString()
+                    }else{ //entryOr ==-1, we want "0" for Python
+                        eOriStr = "0"
+                    }
+                    val pminStr = inter.getLe().toString()
+                    val pmaxStr = inter.getRi().toString()
+                    val deltaStr = delta1.toString()
+                    val maxTstr = biosystem.getMaxT()
+                    resultQDA = getResultFor1paramFromPython( biosystemStr, rStr, eDirStr, eOriStr, pminStr, pmaxStr, deltaStr, maxTstr )
+                    //println("QDA: complete")
+                    
+                    result.addAll( resultQDA )
+                }
+        }
+        /*HERE ends the replaced code for the combined version*/
+        //assign the completed resultset to result
+    
+    return result
+}
+
+/* version only with the QDA abstraction (calling Python)
+ */
+fun getListOfSuccessorsAndParameterSetsQDA( stateAndPar : QueueItem, biosystem : BioSystem, delta1 : Double, delta2 : Double ) : List< QueueItem > {
+    var result : MutableList< QueueItem > = mutableListOf<QueueItem> ()
+    
+    //take all the possible 2n facets (staying forever is not usable for reachability)
+    //determine the successors with nonempty set of parameters
+    //put them into the list of results
+    val n : Int = biosystem.getDim()
+    var state : Array<Int> = stateAndPar.getR()
+    var entryDir : Int = stateAndPar.getDir()
+    var entryOr : Int = stateAndPar.getOr()
+    var slodi : SortedListOfDisjunctIntervalsDouble = stateAndPar.getSlodi()
+    
+    for( inter in slodi.getIntervals() ){
+        /*HERE starts the part that is in the combined version threaded
+         * replaced by QDA Python script */
+         
+        println("QDA: start")
+        //call the Python script that computes QDA 
+        //successors and par sets list
+        val biosystemStr = biosystem.getName()
+        val rStr = rectangleHash( state )
+        val eDirStr = entryDir.toString()
+        var eOriStr : String = ""
+        if( entryOr == 1) { 
+            eOriStr = "1" //entryOr.toString()
+        }else{ //entryOr ==-1, we want "0" for Python
+            eOriStr = "0"
+        }
+        val pminStr = inter.getLe().toString()
+        val pmaxStr = inter.getRi().toString()
+        val deltaStr = delta1.toString()
+        val maxTstr = biosystem.getMaxT()
+        val resultQDA = getResultFor1paramFromPython( biosystemStr, rStr, eDirStr, eOriStr, pminStr, pmaxStr, deltaStr, maxTstr )
+        println("QDA: complete")
+        result = resultQDA
+        /*HERE ends the replaced code for the QDA version*/
+        //assign the completed resultset to result
+    }
+    
+    return result
+}
 
 fun getListOfSuccessorsAndParameterSets( stateAndPar : QueueItem, biosystem : BioSystem, 
         delta1 : Double, delta2 : Double ) : List< QueueItem > {
@@ -1148,29 +1390,33 @@ fun getListOfSuccessorsAndParameterSets( stateAndPar : QueueItem, biosystem : Bi
     var slodi : SortedListOfDisjunctIntervalsDouble = stateAndPar.getSlodi()
     
     for( inter in slodi.getIntervals() ){
-        for( vari in 0..(n-1) ){
-            //upper neighbour if exists [i,i+1]->[i+1,i+2] all have to be tresholds
-            if( state[vari] < (biosystem.getTresCount(vari)-2) ){
-                var slodi1 : SortedListOfDisjunctIntervalsDouble =       get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, 1, delta1, delta2 )
-                if( slodi1.isNonempty() ){
-                    result.add( QueueItem( getUpperNeighbourOn( vari, state ), vari, -1, slodi1 ) )
+        /*HERE starts the part that will be threaded in the COMBINED version 
+         * of this method */
+             for( vari in 0..(n-1) ){
+                //upper neighbour if exists [i,i+1]->[i+1,i+2] all have to be tresholds
+                if( state[vari] < (biosystem.getTresCount(vari)-2) ){
+                    var slodi1 : SortedListOfDisjunctIntervalsDouble =       get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, 1, delta1, delta2 )
+                    if( slodi1.isNonempty() ){
+                        result.add( QueueItem( getUpperNeighbourOn( vari, state ), vari, -1, slodi1 ) )
+                    }
+                }
+                //lower neighbour if exists
+                if( state[vari] > 0 ){
+                    var slodi2 : SortedListOfDisjunctIntervalsDouble =            get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, -1, delta1, delta2 )
+                    if( slodi2.isNonempty() ){
+                        result.add( QueueItem( getLowerNeighbourOn( vari, state ), vari, 1, slodi2 ) )
+                    }
                 }
             }
-            //lower neighbour if exists
-            if( state[vari] > 0 ){
-                var slodi2 : SortedListOfDisjunctIntervalsDouble =       get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, -1, delta1, delta2 )
-                if( slodi2.isNonempty() ){
-                    result.add( QueueItem( getLowerNeighbourOn( vari, state ), vari, 1, slodi2 ) )
-                }
-            }
-        }
+        
+        /*HERE ends the code that will be replaced in COMBINED*/
     }
     
     return result
 }
 
 fun findParamValuesForReachabilityOfBFromA( pmin : Double, pmax : Double, biosystem : BioSystem, stateA : Array<Int>, entryDir : Int, entryOr : Int,constraintsB : List<ConstraintReachable>, delta1 : Double /* delta1 must be > delta2 */, delta2 : Double = 0.01 ) : SortedListOfDisjunctIntervalsDouble {
-   val reachVerbosity = 0
+   val reachVerbosity = 1
 
    //result is zero
    var result : SortedListOfDisjunctIntervalsDouble = SortedListOfDisjunctIntervalsDouble( mutableListOf<IntervalDouble>() )
@@ -1204,7 +1450,7 @@ fun findParamValuesForReachabilityOfBFromA( pmin : Double, pmax : Double, biosys
             var entryDirQI : Int = qitem.getDir()
             var entryOrQI : Int = qitem.getOr()
 
-            for( succQI in getListOfSuccessorsAndParameterSets( qitem, biosystem, delta1, delta2) ){
+            for( succQI in getListOfSuccessorsAndParameterSetsCOMBINEDtimeout( qitem, biosystem, delta1, delta2) ){
                 var succState : Array<Int> = succQI.getR()
                 var succDir : Int = succQI.getDir()
                 var succOr : Int = succQI.getOr()

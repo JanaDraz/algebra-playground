@@ -58,7 +58,72 @@ fun getDefaultOneRectangleDataValue() : OneRectangleData {
         return OneRectangleData( getBioSystemByName("001LV"), arrayOf(0,0), 0, 0, SortedListOfDisjunctIntervalsDouble( mutableListOf<IntervalDouble>() ) )
     }
 
+
+fun getDefaultOneRectangleDataValuePWMA() : OneRectangleDataPWMA {
+        return OneRectangleDataPWMA( getBioSystemPWMAByName("defaultPWMA"), arrayOf(0,0), 0, 0, SortedListOfDisjunctIntervalsDouble( mutableListOf<IntervalDouble>() ) )
+    }
+
 class OneRectangleData( biosystem : BioSystem, state : Array<Int>, 
+                    entryDir :Int , entryOr : Int, 
+                    initialSlodi : SortedListOfDisjunctIntervalsDouble ){
+    
+    var entrysExploredPars : MutableMap< String, SortedListOfDisjunctIntervalsDouble > = mutableMapOf()
+    
+    init{
+        this.entrysExploredPars[entryHash(entryDir,entryOr)] = initialSlodi
+    }
+    
+    override fun toString() : String {
+        var result : String = "\n"
+        for( (k,v) in entrysExploredPars ){
+            result += "\tdir,or="+k+": "
+            result += v.toString()+",\n"
+        }
+        return result
+    }
+    
+    /* Add new slodi of explored parameters into the data about
+     * given entryset.
+     */
+    fun add( entryDir : Int, entryOr : Int, 
+             slodi : SortedListOfDisjunctIntervalsDouble ){
+        if( entrysExploredPars.containsKey( entryHash(entryDir, entryOr) ) ){
+            getMapItemAtKey( entryHash(entryDir, entryOr), entrysExploredPars, SortedListOfDisjunctIntervalsDouble( mutableListOf<IntervalDouble>() ) ).uniteWithOtherDisjunctList( slodi )
+            //this.exploredPars[Pair(entryDir, entryOr)].uniteWithOtherDisjunctList( slodi )
+        }else{
+            this.entrysExploredPars[entryHash(entryDir, entryOr)] = slodi
+        }
+    }
+    
+    /* The given slodi is already explored if it is a subset of exploredPars
+     * for the given entryset.
+     */
+    fun isExplored( entryDir : Int, entryOr : Int, 
+        slodi : SortedListOfDisjunctIntervalsDouble ) : Boolean{
+        if( entrysExploredPars.containsKey( entryHash(entryDir,entryOr) ) ){
+            return slodi.isSubsetOf( getMapItemAtKey( entryHash(entryDir, entryOr), entrysExploredPars, SortedListOfDisjunctIntervalsDouble( mutableListOf<IntervalDouble>() ) ) )
+        }else{
+            return false
+        }
+    }
+    
+    /* Subtract the already explored slodi from given slodi
+     * and return the difference.
+     */
+    fun getSubtractedSlodiForFurtherExploration( entryDir : Int, entryOr : Int, 
+            slodi : SortedListOfDisjunctIntervalsDouble) : SortedListOfDisjunctIntervalsDouble {
+        //println("  slodi in:"+slodi.toString())
+        if( entrysExploredPars.containsKey(entryHash(entryDir,entryOr)) ){
+            var slodi2 : SortedListOfDisjunctIntervalsDouble = getMapItemAtKey( entryHash(entryDir, entryOr), entrysExploredPars, SortedListOfDisjunctIntervalsDouble( mutableListOf<IntervalDouble>() ) )
+            //println("  subtracting "+slodi2)
+            slodi.subtractOtherDisjunctList( slodi2 )
+        }
+        //println("  slodi out:"+slodi.toString())
+        return slodi
+    }
+}
+
+class OneRectangleDataPWMA( biosystem : BioSystemPWMA, state : Array<Int>, 
                     entryDir :Int , entryOr : Int, 
                     initialSlodi : SortedListOfDisjunctIntervalsDouble ){
     
@@ -176,6 +241,64 @@ class StatesData( biosystem : BioSystem, initialState : Array<Int>,
     
 }
 
+class StatesDataPWMA( biosystem : BioSystemPWMA, initialState : Array<Int>, 
+                  initialParSlodi: SortedListOfDisjunctIntervalsDouble,
+                  dir : Int, ori : Int ){
+    //visited rectangles
+    var visited : MutableMap< String, Boolean > = mutableMapOf< String, Boolean >() 
+    var rectanglesExploredPars : MutableMap< String, OneRectangleDataPWMA > = mutableMapOf< String, OneRectangleDataPWMA>()
+    
+    init {
+        this.visited = mutableMapOf< String, Boolean >()
+        this.visited[ rectangleHash(initialState) ] = true
+        this.rectanglesExploredPars[ rectangleHash(initialState) ] = OneRectangleDataPWMA( biosystem, initialState, dir, ori, initialParSlodi )
+    }
+    
+    override fun toString() : String {
+        var result : String = "\n"
+        //per visited states
+        for( (k,v) in rectanglesExploredPars )
+        {
+            //entrysets and explored parsets
+            result += "Rectangle: "+ k 
+            result += ", Data: "+v.toString()
+        }
+        return result
+    }
+    
+    fun visited( state : Array<Int> ) : Boolean {
+        return getMapItemAtKey( rectangleHash(state), visited, false )
+    }
+    
+    fun markAsVisited( state : Array<Int> ){
+        this.visited[ rectangleHash(state) ] = true
+    }
+    
+    fun getOneRectangleParData( state : Array<Int> ) : OneRectangleDataPWMA {
+        return getMapItemAtKey( rectangleHash(state), rectanglesExploredPars, getDefaultOneRectangleDataValuePWMA() )
+    }
+    
+    fun isSlodiAlreadyExplored( state : Array<Int> , entryDir : Int, entryOr : Int, 
+                                slodi : SortedListOfDisjunctIntervalsDouble ) : Boolean {
+        return getMapItemAtKey( rectangleHash(state), rectanglesExploredPars, getDefaultOneRectangleDataValuePWMA() ).isExplored( entryDir, entryOr, slodi )
+    }
+    
+    fun addSlodiToExplored( biosystem : BioSystemPWMA, state : Array<Int> , entryDir : Int, entryOr : Int, 
+                            slodi : SortedListOfDisjunctIntervalsDouble ) {
+        if( rectanglesExploredPars.containsKey(rectangleHash(state)) ){
+            getMapItemAtKey( rectangleHash(state), rectanglesExploredPars, getDefaultOneRectangleDataValuePWMA() ).add( entryDir, entryOr, slodi )
+        }else{
+            rectanglesExploredPars[ rectangleHash(state) ] = OneRectangleDataPWMA( biosystem, state, entryDir, entryOr, slodi)
+        }
+    }
+    
+    fun getSlodiToExploreFurther( state : Array<Int> , entryDir : Int, entryOr : Int, 
+                                  slodi : SortedListOfDisjunctIntervalsDouble ) : SortedListOfDisjunctIntervalsDouble {
+        return getMapItemAtKey( rectangleHash(state), rectanglesExploredPars, getDefaultOneRectangleDataValuePWMA() ).getSubtractedSlodiForFurtherExploration( entryDir, entryOr, slodi )
+    }
+    
+}
+
 /* Class for representing the constraints (there will appear a list of such)
  * defining the region whose reachability we want to analyse.
  * one constraint is on one variable of the system, 
@@ -214,6 +337,17 @@ class ConstraintReachable( variable : Int, ge : Boolean, value : Double ) {
         }
     }
     
+    fun hasIntersectionWith( state : Array<Int>, biosystem : BioSystemPWMA ) : Boolean {
+        val lower : Double = biosystem.getTres(variable, state[variable] ).toDouble()
+        val upper : Double = biosystem.getTres(variable, state[variable] + 1).toDouble()
+        
+        if( ge ){
+            return upper >= value //contact on facet
+        } else {
+            return lower <= value //contact on facet
+        }
+    }
+    
     fun hasSharpIntersectionWith( state : Array<Int>, biosystem : BioSystem ) : Boolean {
         val lower : Double = biosystem.getTres(variable, state[variable] ).toDouble()
         val upper : Double = biosystem.getTres(variable, state[variable] + 1).toDouble()
@@ -227,6 +361,26 @@ class ConstraintReachable( variable : Int, ge : Boolean, value : Double ) {
 }
 
 fun intersectionNonemptyListOfConstraints( stateA : Array<Int>, constraintsB : List<ConstraintReachable>, biosystem : BioSystem ) : Boolean {
+    var result : Boolean = false
+    for( constraint in constraintsB ){
+        if( constraint.hasIntersectionWith( stateA, biosystem ) ){
+            result = true
+        }
+    }
+    return result
+}
+
+fun intersectionNonemptyListOfConstraintsPWMA( stateA : Array<Int>, constraintsB : List<ConstraintReachable>, biosystem : BioSystemPWMA ) : Boolean {
+    var result : Boolean = false
+    for( constraint in constraintsB ){
+        if( constraint.hasIntersectionWith( stateA, biosystem ) ){
+            result = true
+        }
+    }
+    return result
+}
+
+fun intersectionNonemptyListOfConstraintsForPWMA( stateA : Array<Int>, constraintsB : List<ConstraintReachable>, biosystem : BioSystemPWMA ) : Boolean {
     var result : Boolean = false
     for( constraint in constraintsB ){
         if( constraint.hasIntersectionWith( stateA, biosystem ) ){

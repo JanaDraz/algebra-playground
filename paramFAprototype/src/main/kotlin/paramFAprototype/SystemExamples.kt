@@ -16,9 +16,10 @@ typealias UPolyInZ = UnivariatePolynomial<BigInteger>
 
 
 /* Approximation of a hill function
- * on xi-th variable 
+ * depends on xi-th variable 
  * with name xstr
  * for a rectangle with given coords
+ * piecewise linear (step?)
  */
 fun hillapprox( xstr: String, xi : Int, coords : Array<Int>, xtres : Array<Double>, yvals : Array<Double>) : String {
     var result : String = ""
@@ -62,6 +63,11 @@ fun hillapproxPrefix( xstr: String, xi : Int, coords : Array<Int>, xtres : Array
     return result
 }
 
+/* Approximation of a hill function
+ * depends on xi-th variable 
+ * with name xstr
+ * for a rectangle containing point xval
+ */
 fun hillapproxVal( xstr: String, xval : Double, xtres : Array<Double>, yvals : Array<Double>) : String {
     var result : String = ""
     //find the right treshold
@@ -92,7 +98,8 @@ fun hillapproxVal( xstr: String, xval : Double, xtres : Array<Double>, yvals : A
  * tresholds as strings in decimal notation
  */
  
-class BioSystem(   @JvmField var dim : Int,
+class BioSystem(   @JvmField var name : String,
+                   @JvmField var dim : Int,
                    @JvmField var paramCount : Int, 
                    @JvmField var varStrings : Array<String>,
                    @JvmField var parStrings : Array<String>,
@@ -122,6 +129,10 @@ class BioSystem(   @JvmField var dim : Int,
             } 
         }
         this.maxTQ = strToQ( maxT )
+    }
+    
+    fun getName() : String {
+        return this.name
     }
     
     fun getDim() : Int {
@@ -187,7 +198,7 @@ class BioSystem(   @JvmField var dim : Int,
                 return tresholdsStrings[ variable ][ state[ dir ] + 1 ]
             else if( or < 0 )
                 return tresholdsStrings[ variable ][ state[ dir ] ]
-            else
+            else //or==0
                 return tresholdsStrings[ variable ][ state[ dir ] + 1 ]
         } else {
             return tresholdsStrings[ variable ][ state[ variable ] + 1 ]
@@ -223,7 +234,9 @@ class BioSystem(   @JvmField var dim : Int,
 /* PIECEWISE DERIVATIVE
  */
  
-class BioSystemPWMA( @JvmField var dim : Int,
+class BioSystemPWMA(
+                   @JvmField var name : String, 
+                   @JvmField var dim : Int,
                    @JvmField var paramCount : Int, 
                    @JvmField var varStrings : Array<String>,
                    @JvmField var parStrings : Array<String>,
@@ -277,6 +290,10 @@ class BioSystemPWMA( @JvmField var dim : Int,
         return resultDerStrings
     }
     
+    fun getName() : String {
+        return this.name
+    }
+    
     fun getDim() : Int {
         return this.dim
     }
@@ -313,17 +330,6 @@ class BioSystemPWMA( @JvmField var dim : Int,
         return tresholdsStrings[ variable ][ (tresholdsStrings[ variable ].size) - 1 ]
     }
     
-    fun getMinOnFacet( variable : Int, state : Array<Int>, dir : Int, or : Int ) : String {
-        if( variable == dir ) {
-            if( or > 0 )
-                return tresholdsStrings[ variable ][ state[ dir ] + 1 ]
-            else
-                return tresholdsStrings[ variable ][ state[ dir ] ]
-        } else {
-            return tresholdsStrings[ variable ][ state[ variable ] ]
-        }
-    }
-    
     fun getTresCount( variable : Int ) : Int {
         return tresholdsStrings[ variable ].size
     }
@@ -331,7 +337,21 @@ class BioSystemPWMA( @JvmField var dim : Int,
     fun getTresCounts() : Array<Int> {
         return Array<Int>( this.dim ){ i -> getTresCount(i) }
     }
+
+    fun getMinOnFacet( variable : Int, state : Array<Int>, dir : Int, or : Int ) : String {
+        if( variable == dir ) {
+            if( or > 0 )
+                return tresholdsStrings[ variable ][ state[ dir ] + 1 ]
+            else if( or < 0 )
+                return tresholdsStrings[ variable ][ state[ dir ] ]
+            else//or==0
+                return tresholdsStrings[ variable ][ state[ dir ] ]
+        } else {
+            return tresholdsStrings[ variable ][ state[ variable ] ]
+        }
+    }
     
+  
     fun getRectanglesCount() : Int {
         var count : Int = 1
         for( i in 0..(this.dim-1) ){
@@ -344,8 +364,10 @@ class BioSystemPWMA( @JvmField var dim : Int,
         if( variable == dir ) {
             if( or > 0 )
                 return tresholdsStrings[ variable ][ state[ dir ] + 1 ]
-            else
+            else if( or < 0 )
                 return tresholdsStrings[ variable ][ state[ dir ] ]
+            else
+                return tresholdsStrings[ variable ][ state[ dir ] + 1 ]
         } else {
             return tresholdsStrings[ variable ][ state[ variable ] + 1 ]
         }
@@ -492,7 +514,7 @@ class BioSystemPWMA( @JvmField var dim : Int,
 */                    
 fun getBioSystemByName( name : String ) : BioSystem {
     when( name ){
-        "001sys" -> return BioSystem( 2, 1,  //dim, num pars 
+        "001sys" -> return BioSystem("001sys", 2, 1,  //dim, num pars 
                              arrayOf( "x", "y" ), //vars
                              arrayOf( "p" ),      //pars
                              arrayOf( "1", "p" ), //der x, der y
@@ -503,7 +525,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              "2.0", 2,//maxT, Taylor degree
                              mutableMapOf("x" to "1", //prefixEquations
                                           "y" to "p") ) 
-        "002sys" -> return BioSystem( 2, 1,//n m
+        "002sys" -> return BioSystem("002sys", 2, 1,//n m
                              arrayOf( "x", "y" ),//vars
                              arrayOf( "p" ),//par
                              arrayOf( "x+1", "y+p" ),
@@ -514,7 +536,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              "1", 1,//maxT, Taylor degree
                              mutableMapOf("x" to ("x" add "1"), //prefixEquations
                                           "y" to ("y" add "p")) )
-        "003LV" -> return BioSystem( 2, 1,//dim, num pars
+        "003LV" -> return BioSystem("003LV", 2, 1,//dim, num pars
                              arrayOf( "x", "y" ),//vars
                              arrayOf( "p" ),//pars
                              arrayOf( "0.1*x-p*x*y", 
@@ -528,7 +550,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              "2.0", 1 ,//maxT, Taylor degree
                              mutableMapOf("x" to (("0.1" mul "x") rem ("p" mul "x" mul "y")), //prefixEquations
                                           "y" to (("-0.05" mul "y") add ("0.2" mul "x" mul "y"))) )                   
-        "004POL" -> return BioSystem( 2, 1,//n m
+        "004POL" -> return BioSystem("004POL", 2, 1,//n m
                              arrayOf( "x", "y" ),//vars
                              arrayOf( "p" ),//pars
                              arrayOf( "y", 
@@ -542,7 +564,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              "1", 1 ,//maxT, Taylor degree
                              mutableMapOf("x" to "y", //prefixEquations
                                           "y" to ((("p" mul "y") rem ("p" mul "x" mul "x" mul "y")) rem "x") ) )
-        "005ROS" -> return BioSystem( 3, 1,//n m
+        "005ROS" -> return BioSystem("005ROS", 3, 1,//n m
                              arrayOf( "x", "y", "z" ),//vars
                              arrayOf( "c" ),//pars
                              arrayOf( "-y-z", 
@@ -561,7 +583,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              mutableMapOf("x" to (("-1" mul "x") rem "z"), //prefixEquations
                                           "y" to ("x" add ("0.2" mul "y")),
                                           "z" to ("0.2" add ("x" mul "z") add ("-1" mul "c" mul "z")) ) )   
-        "CASE-EXAMPLE-LV-1PAR" -> return BioSystem( 2, 1,//dim, num pars
+        "CASE-EXAMPLE-LV-1PAR" -> return BioSystem("CASE-EXAMPLE-LV-1PAR", 2, 1,//dim, num pars
                              arrayOf( "x", "y" ),//vars
                              arrayOf( "p" ),//pars
                              arrayOf( "0.1*x-p*x*y", 
@@ -575,7 +597,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              "10.0", 1 ,//maxT, Taylor degree
                              mutableMapOf("x" to (("0.1" mul "x") rem ("p" mul "x" mul "y")), //prefixEquations
                                           "y" to (("-0.06" mul "y") add ("0.2" mul "x" mul "y"))) )
-        "CASE000aLVPARSQUARED" -> return BioSystem( 2, 1,//dim, num pars
+        "CASE000aLVPARSQUARED" -> return BioSystem("CASE000aLVPARSQUARED", 2, 1,//dim, num pars
                              arrayOf( "x", "y" ),//vars
                              arrayOf( "p" ),//pars
                              arrayOf( "0.1*x-p*x*y", 
@@ -589,7 +611,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              "10.0", 1 ,//maxT, Taylor degree
                              mutableMapOf("x" to (("0.1" mul "x") rem ("p" mul "x" mul "y")), //prefixEquations
                                           "y" to ((("-1.0" mul "p" mul "p") mul "y") add ("0.2" mul "x" mul "y"))) )
-        "CASE000bLVMULTIPARS" -> return BioSystem( 2, 2,//dim, num pars
+        "CASE000bLVMULTIPARS" -> return BioSystem("CASE000bLVMULTIPARS", 2, 2,//dim, num pars
                              arrayOf( "x", "y" ),//vars
                              arrayOf( "p", "q" ),//pars
                              arrayOf( "0.1*x-p*x*y", 
@@ -603,7 +625,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              "10.0", 1 ,//maxT, Taylor degree
                              mutableMapOf("x" to (("0.1" mul "x") rem ("p" mul "x" mul "y")), //prefixEquations
                                           "y" to (("-1.0" mul "q" mul "y") add ("0.2" mul "x" mul "y"))) )
-        "CASE000cLV1PARMORETRES" -> return BioSystem( 2, 1,//dim, num pars
+        "CASE000cLV1PARMORETRES" -> return BioSystem("CASE000cLV1PARMORETRES", 2, 1,//dim, num pars
                              arrayOf( "x", "y" ),//vars
                              arrayOf( "p" ),//pars
                              arrayOf( "0.1*x-p*x*y", 
@@ -612,19 +634,27 @@ fun getBioSystemByName( name : String ) : BioSystem {
                                       "-0.0025*y+0.04*x*y-0.04*x*x*y-0.2*p*x*y*y" ),//2.ders NOT APPLICABLE
                              arrayOf( "0.005*x-0.075*p*x*y+0.5*p*p*y*y-0.1*p*x*x*y", 
                                       "-0.00125*y+0.02*x*y-0.02*x*x*y-0.1*p*x*y*y" ),//half 2.ders NOT APPLICABLE
-                             arrayOf( arrayOf( "0.1","0.11","0.12","0.13","0.14","0.15","0.16","0.17","0.18","0.19",
-                                            "0.2","0.21","0.22","0.23","0.24","0.25","0.26","0.27","0.28","0.29",
-                                            "0.3","0.31","0.32","0.33","0.34","0.35","0.36","0.37","0.38","0.39",
-                                            "0.4","0.41","0.42","0.43","0.44","0.45","0.46","0.47","0.48","0.49",
-                                            "0.5","0.51","0.52","0.53","0.54","0.55","0.56","0.57","0.58","0.59",
-                                            "0.6" ),//tresholds x
-                                      arrayOf( "0.0","0.05","0.1","0.15","0.2","0.25","0.3","0.35","0.4","0.45",
-                                      "0.5","0.55","0.6","0.65","0.7","0.75","0.8","0.85","0.9","0.95","1.0" ) ),//tresholds y
+                             arrayOf( arrayOf( "0.0", "0.012", "0.024", "0.036000000000000004", "0.048", "0.06", "0.07200000000000001", "0.084", "0.096", "0.108", "0.12", "0.132", "0.14400000000000002", "0.156", "0.168", "0.18", "0.192", "0.20400000000000001", "0.216", "0.228", "0.24", "0.252", "0.264", "0.276", "0.28800000000000003", "0.3", "0.312", "0.324", "0.336", "0.34800000000000003", "0.36", "0.372", "0.384", "0.396", "0.40800000000000003", "0.42", "0.432", "0.444", "0.456", "0.468", "0.48", "0.492", "0.504", "0.516", "0.528", "0.54", "0.552", "0.5640000000000001", "0.5760000000000001", "0.588", "0.6" ),//tresholds x
+                                      arrayOf( "0.0", "0.02", "0.04", "0.06", "0.08", "0.1", "0.12", "0.14", "0.16", "0.18", "0.2", "0.22", "0.24", "0.26", "0.28", "0.3", "0.32", "0.34", "0.36", "0.38", "0.4", "0.42", "0.44", "0.46", "0.48", "0.5", "0.52", "0.54", "0.56", "0.58", "0.6", "0.62", "0.64", "0.66", "0.68", "0.7000000000000001", "0.72", "0.74", "0.76", "0.78", "0.8", "0.8200000000000001", "0.84", "0.86", "0.88", "0.9", "0.92", "0.9400000000000001", "0.96", "0.98", "1.0" ) ),//tresholds y
                              "10.0", 1 ,//maxT, Taylor degree
                              mutableMapOf("x" to (("0.1" mul "x") rem ("p" mul "x" mul "y")), //prefixEquations
                                           "y" to (("-1.0" mul "0.06" mul "y") add ("0.2" mul "x" mul "y"))) )
-        "CASE001aSEIR1par" -> return BioSystem( 4, 1,//n m
-                             arrayOf( "w", "x", "y", "z" ),//vars
+        "CASE002aBRUSSELATOR1par" -> return BioSystem("CASE002aBRUSSELATOR1par", 2,1,//dim, num pars
+                             arrayOf( "x", "y" ),//vars
+                             arrayOf( "p"),//pars
+                             arrayOf( "1.0+x*x*y-p*x-x", 
+                                      "p*x-x*x*y" ),//ders
+                             arrayOf( "0.0", 
+                                      "0.0" ),//2.ders NOT APPLICABLE
+                             arrayOf( "0.005*x-0.075*p*x*y+0.5*p*p*y*y-0.1*p*x*x*y", 
+                                      "-0.00125*y+0.02*x*y-0.02*x*x*y-0.1*p*x*y*y" ),//half 2.ders NOT APPLICABLE
+                             arrayOf( arrayOf( "0.0", "0.006", "0.012", "0.018000000000000002", "0.024", "0.03", "0.036000000000000004", "0.042", "0.048", "0.054", "0.06", "0.066", "0.07200000000000001", "0.078", "0.084", "0.09", "0.096", "0.10200000000000001", "0.108", "0.114", "0.12", "0.126", "0.132", "0.138", "0.14400000000000002", "0.15", "0.156", "0.162", "0.168", "0.17400000000000002", "0.18", "0.186", "0.192", "0.198", "0.20400000000000001", "0.21", "0.216", "0.222", "0.228", "0.234", "0.24", "0.246", "0.252", "0.258", "0.264", "0.27", "0.276", "0.28200000000000003", "0.28800000000000003", "0.294", "0.3", "0.306", "0.312", "0.318", "0.324", "0.33", "0.336", "0.342", "0.34800000000000003", "0.354", "0.36", "0.366", "0.372", "0.378", "0.384", "0.39", "0.396", "0.402", "0.40800000000000003", "0.41400000000000003", "0.42", "0.426", "0.432", "0.438", "0.444", "0.45", "0.456", "0.462", "0.468", "0.47400000000000003", "0.48", "0.486", "0.492", "0.498", "0.504", "0.51", "0.516", "0.522", "0.528", "0.534", "0.54", "0.546", "0.552", "0.558", "0.5640000000000001", "0.5700000000000001", "0.5760000000000001", "0.582", "0.588", "0.594", "0.6" ),//100 tresholds x
+                                      arrayOf( "0.0", "0.006", "0.012", "0.018000000000000002", "0.024", "0.03", "0.036000000000000004", "0.042", "0.048", "0.054", "0.06", "0.066", "0.07200000000000001", "0.078", "0.084", "0.09", "0.096", "0.10200000000000001", "0.108", "0.114", "0.12", "0.126", "0.132", "0.138", "0.14400000000000002", "0.15", "0.156", "0.162", "0.168", "0.17400000000000002", "0.18", "0.186", "0.192", "0.198", "0.20400000000000001", "0.21", "0.216", "0.222", "0.228", "0.234", "0.24", "0.246", "0.252", "0.258", "0.264", "0.27", "0.276", "0.28200000000000003", "0.28800000000000003", "0.294", "0.3", "0.306", "0.312", "0.318", "0.324", "0.33", "0.336", "0.342", "0.34800000000000003", "0.354", "0.36", "0.366", "0.372", "0.378", "0.384", "0.39", "0.396", "0.402", "0.40800000000000003", "0.41400000000000003", "0.42", "0.426", "0.432", "0.438", "0.444", "0.45", "0.456", "0.462", "0.468", "0.47400000000000003", "0.48", "0.486", "0.492", "0.498", "0.504", "0.51", "0.516", "0.522", "0.528", "0.534", "0.54", "0.546", "0.552", "0.558", "0.5640000000000001", "0.5700000000000001", "0.5760000000000001", "0.582", "0.588", "0.594", "0.6" ) ),//100 tresholds y
+                             "2.0", 1 ,//maxT, Taylor degree
+                             mutableMapOf("x" to (("1.0" add ("x" mul "x" mul "y")) rem (("p" mul "x") add "x")), //prefixEquations
+                                          "y" to (("p" mul "x") rem ("x" mul "x" mul "y"))) )
+        "CASE001aSEIR1par" -> return BioSystem("CASE001aSEIR1par", 4, 1,//n m
+                             arrayOf( "w", "x", "y", "z" ),//vars SEIR
                              arrayOf( "b" ),//pars
                              arrayOf( "-1.0*b*w*y*0.0000001", 
                                       "b*w*y*0.0000001-0.2*x",
@@ -638,17 +668,16 @@ fun getBioSystemByName( name : String ) : BioSystem {
                                       "0.0",
                                       "0.0",
                                       "0.0" ),//half 2nd ders NOT APPLICABLE
-                             arrayOf( arrayOf( "0","500","1000","5000","10000","1000000","2000000","3000000","4000000","5000000","6000000","7000000","8000000","9000000","10000000" ),//tres w                             
-                             arrayOf( "0","500","1000","5000","10000","1000000","2000000","3000000","4000000","5000000","6000000","7000000","8000000","9000000","10000000" ),//tres x
-                             arrayOf( "0","500","1000","5000","10000","1000000","2000000","3000000","4000000","5000000","6000000","7000000","8000000","9000000","10000000" ),//tres y
-                             arrayOf( "0","500","1000","5000","10000","1000000","2000000","3000000","4000000","5000000","6000000","7000000","8000000","9000000","10000000" ),//tres y
-                             arrayOf( "0","500","1000","5000","10000","1000000","2000000","3000000","4000000","5000000","6000000","7000000","8000000","9000000","10000000" )),//tres x,//tres z
+                             arrayOf( arrayOf( "0.0", "666666.6666666666", "1333333.3333333333", "2000000.0", "2666666.6666666665", "3333333.333333333", "4000000.0", "4666666.666666666", "5333333.333333333", "6000000.0", "6666666.666666666", "7333333.333333333", "8000000.0", "8666666.666666666", "9333333.333333332", "10000000.0" ),//tres w                             
+                             arrayOf( "0.0", "666666.6666666666", "1333333.3333333333", "2000000.0", "2666666.6666666665", "3333333.333333333", "4000000.0", "4666666.666666666", "5333333.333333333", "6000000.0", "6666666.666666666", "7333333.333333333", "8000000.0", "8666666.666666666", "9333333.333333332", "10000000.0" ),//tres x
+                             arrayOf( "0.0", "666666.6666666666", "1333333.3333333333", "2000000.0", "2666666.6666666665", "3333333.333333333", "4000000.0", "4666666.666666666", "5333333.333333333", "6000000.0", "6666666.666666666", "7333333.333333333", "8000000.0", "8666666.666666666", "9333333.333333332", "10000000.0" ),//tres y
+                             arrayOf( "0","500","1000","5000","10000","1000000","2000000","3000000","4000000","5000000","6000000","7000000","8000000","9000000","10000000" )),//tres z
                              "5", 1 ,//maxT, Taylor degree
                              mutableMapOf("w" to (((("-1" mul "0.0000001") mul "b") mul "w") mul "y"), //prefixEquations
                                           "x" to (( "0.0000001" mul ("b" mul ("w" mul "y"))) rem ("0.2" mul "x")),
                                           "y" to (("0.2" mul "x") rem ("5.006" mul "y")),
                                           "z" to ("0.2" mul "y") ))
-        "CASE001aSEIRnorm1par" -> return BioSystem( 4, 1,//n m
+        "CASE001aSEIRnorm1par" -> return BioSystem("CASE001aSEIRnorm1par", 4, 1,//n m
                              arrayOf( "w", "x", "y", "z" ),//vars
                              arrayOf( "b" ),//pars
                              arrayOf( "-1.0*b*w*y", 
@@ -663,17 +692,40 @@ fun getBioSystemByName( name : String ) : BioSystem {
                                       "0.0",
                                       "0.0",
                                       "0.0" ),//half 2nd ders NOT APPLICABLE
-                             arrayOf( arrayOf( "0.0","0.0005","0.001","0.005","0.01","0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9","1.0" ),//tres w                             
-                             arrayOf( "0.0","0.0005","0.001","0.005","0.01","0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9","1.0" ),//tres x
-                             arrayOf( "0.0","0.0005","0.001","0.005","0.01","0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9","1.0" ),//tres y
-                             arrayOf( "0.0","0.0005","0.001","0.005","0.01","0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9","1.0" ),//tres y
-                             arrayOf( "0.0","0.0005","0.001","0.005","0.01","0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9","1.0" )),//tres z
+                             arrayOf( arrayOf( "0.0", "0.06666666666666667", "0.13333333333333333", "0.2", "0.26666666666666666", "0.3333333333333333", "0.4", "0.4666666666666667", "0.5333333333333333", "0.6", "0.6666666666666666", "0.7333333333333333", "0.8", "0.8666666666666667", "0.9333333333333333", "1.0" ),//15 tres w                             
+                             arrayOf( "0.0", "0.06666666666666667", "0.13333333333333333", "0.2", "0.26666666666666666", "0.3333333333333333", "0.4", "0.4666666666666667", "0.5333333333333333", "0.6", "0.6666666666666666", "0.7333333333333333", "0.8", "0.8666666666666667", "0.9333333333333333", "1.0" ),//15 tres x
+                             arrayOf( "0.0", "0.06666666666666667", "0.13333333333333333", "0.2", "0.26666666666666666", "0.3333333333333333", "0.4", "0.4666666666666667", "0.5333333333333333", "0.6", "0.6666666666666666", "0.7333333333333333", "0.8", "0.8666666666666667", "0.9333333333333333", "1.0" ),//15 tres y
+                             arrayOf("0.0", "0.06666666666666667", "0.13333333333333333", "0.2", "0.26666666666666666", "0.3333333333333333", "0.4", "0.4666666666666667", "0.5333333333333333", "0.6", "0.6666666666666666", "0.7333333333333333", "0.8", "0.8666666666666667", "0.9333333333333333", "1.0" )),//15 tres z
                              "5", 1 ,//maxT, Taylor degree
                              mutableMapOf("w" to ((("-1" mul "b") mul "w") mul "y"), //prefixEquations
                                           "x" to (("b" mul ("w" mul "y")) rem ("0.2" mul "x")),
                                           "y" to (("0.2" mul "x") rem ("1.0" mul "y")),
                                           "z" to ("1.0" mul "y") ))
-        "CASE001bSEIRmpar" -> return BioSystem( 4, 1,//n m
+        "CASE001aSEIRnormSimple1par" -> return BioSystem("CASE001aSEIRnormSimple1par", 4, 1,//n m
+                             arrayOf( "w", "x", "y", "z" ),//vars
+                             arrayOf( "b" ),//pars
+                             arrayOf( "-1.0*b*w*y", 
+                                      "b*w*y-0.2*x",
+                                      "0.2*x-0.2*y", //1.0y->0.2y
+                                      "0.2*y" ),//ders //1.0y->0.2y
+                             arrayOf( "0.0", 
+                                      "0.0",
+                                      "0.0",
+                                      "0.0" ),//2nd ders NOT APPLICABLE
+                             arrayOf( "0.0", 
+                                      "0.0",
+                                      "0.0",
+                                      "0.0" ),//half 2nd ders NOT APPLICABLE
+                             arrayOf( arrayOf( "0.0", "0.1", "0.2", "0.30000000000000004", "0.4", "0.5", "0.6000000000000001", "0.7000000000000001", "0.8", "0.9", "1.0" ),//10 tres w                             
+                             arrayOf( "0.0", "0.1", "0.2", "0.30000000000000004", "0.4", "0.5", "0.6000000000000001", "0.7000000000000001", "0.8", "0.9", "1.0" ),//10 tres x
+                             arrayOf( "0.0", "0.1", "0.2", "0.30000000000000004", "0.4", "0.5", "0.6000000000000001", "0.7000000000000001", "0.8", "0.9", "1.0" ),//10 tres y
+                             arrayOf( "0.0", "0.1", "0.2", "0.30000000000000004", "0.4", "0.5", "0.6000000000000001", "0.7000000000000001", "0.8", "0.9", "1.0" )),//10 tres z
+                             "5", 1 ,//maxT, Taylor degree
+                             mutableMapOf("w" to ((("-1" mul "b") mul "w") mul "y"), //prefixEquations
+                                          "x" to (("b" mul ("w" mul "y")) rem ("0.2" mul "x")),
+                                          "y" to (("0.2" mul "x") rem ("0.2" mul "y")),//1.0y->0.2y
+                                          "z" to ("0.2" mul "y") ))//1.0y->0.2y
+        "CASE001bSEIRmpar" -> return BioSystem("CASE001bSEIRmpar", 4, 1,//n m
                              arrayOf( "w", "x", "y", "z" ),//vars
                              arrayOf( "b" ),//pars
                              arrayOf( "Lambda-Mju*w-b*w*y*0.0000001", 
@@ -696,7 +748,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              mutableMapOf("x" to (("-1" mul "x") rem "z"), //prefixEquations
                                           "y" to ("x" add ("0.2" mul "y")),
                                           "z" to ("0.2" add ("x" mul "z") add ("-1" mul "c" mul "z")) ) )
-        "CASE001bSEIRnormMpar" -> return BioSystem( 4, 2,//n m
+        "CASE001bSEIRnormMpar" -> return BioSystem("CASE001bSEIRnormMpar", 4, 2,//n m
                              arrayOf( "w", "x", "y", "z" ),//vars
                              arrayOf( "b","s" ),//pars beta, sigma, gamma?
                              arrayOf( "-1.0*b*w*y", 
@@ -721,7 +773,7 @@ fun getBioSystemByName( name : String ) : BioSystem {
                                           "x" to (("b" mul ("w" mul "y")) rem ("0.2" mul "x")),
                                           "y" to (("0.2" mul "x") rem ("1.0" mul "y")),
                                           "z" to ("1.0" mul "y") ) )
-        else -> return BioSystem( 2, 1, //zero dummy system
+        else -> return BioSystem("default", 2, 1, //zero dummy system
                              arrayOf( "x", "y" ),
                              arrayOf( "p" ),
                              arrayOf( "0", "0" ),
@@ -737,23 +789,23 @@ fun getBioSystemByName( name : String ) : BioSystem {
     
     fun getBioSystemPWMAByName( name : String ) : BioSystemPWMA{
     when( name ){
-        "CASE002aREPRES3D" -> return BioSystemPWMA( 3, 1,//n m
+        "CASE002aREPRES3D" -> return BioSystemPWMA("CASE002aREPRES3D", 3, 1,//n m
                              arrayOf( "x", "y", "z" ),//vars
-                             arrayOf( "c" ),//pars
-                             arrayOf( {coords -> (hillapprox("y",1,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*x") }, 
-                             { coords -> (hillapprox("z",2,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*y")}, 
-                             {coords -> (hillapprox("x",0,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*z")} ),//ders
-                             arrayOf( arrayOf( "0.000000", "2.011341", "2.921948", "3.692462, 5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" ),//tres x
-                             arrayOf( "0.000000", "2.011341", "2.921948", "3.692462, 5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" ),//tres y
-                             arrayOf( "0.000000", "2.011341", "2.921948", "3.692462, 5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" )),//tres z
+                             arrayOf( "c" ),//pars //orig c=0.1, find c in [0,1]
+                             arrayOf( {coords -> (hillapprox("y",1,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-c*x") }, 
+                             { coords -> (hillapprox("z",2,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-c*y")}, 
+                             {coords -> (hillapprox("x",0,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-c*z")} ),//ders
+                             arrayOf( arrayOf( "0.000000", "2.011341", "2.921948", "3.692462","5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" ),//tres x
+                             arrayOf( "0.000000", "2.011341", "2.921948", "3.692462", "5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" ),//tres y
+                             arrayOf( "0.000000", "2.011341", "2.921948", "3.692462", "5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" )),//tres z
                              "1", 1 ,//maxT, Taylor degree
                              //prefixEquations
                              arrayOf( {coords -> (hillapproxPrefix("y",1,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*x") }, 
                              { coords -> (hillapproxPrefix("z",2,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*y")}, 
                              {coords -> (hillapproxPrefix("x",0,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*z")} ) )
-        "CASE002bREPRES5D" -> return BioSystemPWMA( 5, 1,//n m
+        "CASE002bREPRES5D" -> return BioSystemPWMA("CASE002bREPRES5D", 5, 1,//n m
                              arrayOf( "u","v","x", "y", "z" ),//vars
-                             arrayOf( "c" ),//pars
+                             arrayOf( "c" ),//pars 
                              arrayOf( {coords -> (hillapprox("v",1,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*x") }, 
                              { coords -> (hillapprox("x",2,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*y")}, 
                              {coords -> (hillapprox("y",3,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*z")},
@@ -771,15 +823,15 @@ fun getBioSystemByName( name : String ) : BioSystem {
                              {coords -> (hillapproxPrefix("y",3,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*z")},
                              { coords -> (hillapproxPrefix("z",4,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*y")}, 
                              {coords -> (hillapproxPrefix("u",0,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*z")} ) )
-        else -> return BioSystemPWMA( 3, 1,//n m
+        else -> return BioSystemPWMA("defaultPWMA", 3, 1,//n m
                              arrayOf( "x", "y", "z" ),//vars
                              arrayOf( "c" ),//pars
                              arrayOf( {coords -> (hillapprox("y",1,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*x") }, 
                              { coords -> (hillapprox("z",2,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*y")}, 
                              {coords -> (hillapprox("x",0,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*z")} ),//ders
-                             arrayOf( arrayOf( "0.000000", "2.011341", "2.921948", "3.692462, 5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" ),//tres x
-                             arrayOf( "0.000000", "2.011341", "2.921948", "3.692462, 5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" ),//tres y
-                             arrayOf( "0.000000", "2.011341", "2.921948", "3.692462, 5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" )),//tres z
+                             arrayOf( arrayOf( "0.000000", "2.011341", "2.921948", "3.692462", "5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" ),//tres x
+                             arrayOf( "0.000000", "2.011341", "2.921948", "3.692462", "5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" ),//tres y
+                             arrayOf( "0.000000", "2.011341", "2.921948", "3.692462", "5.563709", "6.284189", "7.074716", "8.035357", "9.336224", "10.000000" )),//tres z
                              "1", 1 ,//maxT, Taylor degree
                              //prefixEquations
                              arrayOf( {coords -> (hillapproxPrefix("y",1,coords,arrayOf( 0.000000, 2.011341, 2.921948, 3.692462, 5.563709, 6.284189, 7.074716, 8.035357, 9.336224, 10.000000 ),arrayOf( 1.000000, 0.989576, 0.936192, 0.819908, 0.369553, 0.241771, 0.149892, 0.085328, 0.042196, 0.030303))+"-0.1*x") }, 
