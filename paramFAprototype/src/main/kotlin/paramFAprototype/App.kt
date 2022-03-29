@@ -33,7 +33,7 @@ fun exampleLVP(){
     
     var slodiAC: SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVexample, arrayOf(1,1), 0, -1, 0, 1, 0.01, divideP )
     
-    println("CASE-EXAMPLE-LV-1PAR p:")
+    println("CASE-EXAMPLE-LV-1PAR p:") //? is this dreal reasoning mehthod? probably...
     println("C->A for p in "+slodiCA.toString()) //C->A for p in {[0.16250000000000003,0.5]}
     println("A->B for p in "+slodiAB.toString()) //A->B for p in {[0.2,0.5]}
     println("B->A for p in "+slodiBA.toString()) //B->A for p in {[0.1,0.15000000000000002]}
@@ -55,7 +55,7 @@ fun exampleLVP_sampling(){
     
     var slodiAC: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVexample, arrayOf(2,1), 0, 1, 0, -1, delta1, delta2 )
 
-    println("CASE-EXAMPLE-LV-1PAR p:")           //v results for whole intervals method below
+    println("CASE-EXAMPLE-LV-1PAR p:")           //v results for whole intervals method (dreal sampling? probably) below
     println("C->A for p in "+slodiCA.toString()) //C->A for p in {[0.16250000000000003,0.5]}
     println("A->B for p in "+slodiAB.toString()) //A->B for p in {[0.2,0.5]}
     println("B->A for p in "+slodiBA.toString()) //B->A for p in {[0.1,0.15000000000000002]}
@@ -77,7 +77,7 @@ A->C for p in {(0.16640625000000003,0.5]}
 
 
 fun caseStudyLVPPSquared(){
- //p,p^2 one parameter synthesis
+ //p,p^2 one parameter synthesis, dreal reasoning probably
     
     var systemLVp : BioSystem = getBioSystemByName( "CASE000aLVPARSQUARED" )
     var divideP : Int = 5
@@ -214,16 +214,19 @@ fun caseStudyLVSmallReachability(){
     //call reachability
     var delta1 : Double = 0.1
     var delta2 : Double = 0.01
-    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( 0.1, 0.5, systemLVReach1, arrayOf(1,1), 1,-1, listOf<ConstraintReachable>( ConstraintReachable(0,true, 0.5)), delta1, delta2 )
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( 0.1, 0.5, systemLVReach1, arrayOf(1,1), /*0,0,*/1,-1, listOf<ConstraintReachable>( ConstraintReachable(0,true, 0.5)), delta1, delta2 )
     println( slodi )
 }
+//11 00 init:
+//Result of reach A,B: {[0.1,0.20625000000000002)}
+//{[0.1,0.20625000000000002)}
 
 
 fun caseStudySEIR(){
     //CASE001aSEIR1par
     //add the initial rectangle state
     var systemSEIRp : BioSystem = getBioSystemByName( "CASE001aSEIR1par" )
-    
+     
     //For which b in [0.1,100] the number of S is decreasing?
     //all b in [0.1,100] maxT = 20 (days)
 //    var dSlodi : SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 100.0, systemSEIRp, arrayOf(13,0,0,0), 0, 0, 0, -1, 0.01, 2 )
@@ -238,9 +241,57 @@ fun caseStudySEIR(){
     
 }
 
-fun caseStudyRepressilator3D(){
+fun caseStudySEIR_SimpleNormReachability(){
+    //simple SEIR model normed, 1 parameter = beta
+    val systemSEIR1par : BioSystem = getBioSystemByName("CASE001aSEIRnormSimple1par")
+    //fraction of infected is >= 0.5, vars: 0 s 1 e 2 i 3 r
+    val constraintr : ConstraintReachable = ConstraintReachable( 2, true, 0.5 )
+    val pmin : Double = 0.1
+    val pmax : Double = 1.0
+    //compute reachability
     
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemSEIR1par, arrayOf(9,0,0,0), /*0,0,*/3,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    println( slodi )
 }
+//?zkouset? init 8010 3,-1 with combined timeout reach A,B
+
+
+//init 9000 3,-1
+//combined method with QDA, reach A,B:
+
+
+//init 2000 0,0
+//Result of reach A,B: {[0.19375,1.0]}
+//{[0.19375,1.0]}
+
+fun caseStudyRepressilator3D(){
+    val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
+    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
+    val pmin : Double = 0.0//0.1
+    val pmax : Double = 3.0//1.0
+    //compute reachability
+    
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    println( slodi )
+}
+/*repressilator^>
+ * val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
+    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
+    val pmin : Double = 0.1
+    val pmax : Double = 1.0
+    //compute reachability
+    
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+ * Result of reach A,B: {[0.1,1.0]}
+{[0.1,1.0]}
+ */
 
 
 fun main(args: Array<String>) {
@@ -255,9 +306,21 @@ fun main(args: Array<String>) {
 
 //    caseStudyLVPQ()
 
-    caseStudyLVReachability()
+    //caseStudyLVReachability()  //nedojelo do konce
 
-    //*caseStudyLVSmallReachability()
+    /**
+     * the two small reachabilities with whole initial rectangles follow
+     */
+    //done -with QDA and -with the combined FA/QDA timeout 1min, always FA
+    //caseStudyLVSmallReachability()
+    
+    //28.3.2022 - seir jeste pojede, ted zkusime neco mensiho hybridne s pythonem... prijde zrychleni?
+    //29.3.2022 - now try combined seir, timeout is 1min...
+    caseStudySEIR_SimpleNormReachability()
+    
+    //28.3.2022 dobehlo rychle
+    //Result of reach A,B: {[0.1,1.0]} / = input pars
+    //caseStudyRepressilator3D()
     
     //simplifyAPolynomialExpression( "(1.0 + 2.1)*x-(20*p-1.0008)*(0.0000001-0.0000009)*x")
     

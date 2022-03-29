@@ -68,7 +68,7 @@ fun digResultFromReduceOutput(output1: List<String>): String {
 fun getResultFromReduce(commandsForReduce: ArrayList<String>): List<String> {
     val tempFile = File.createTempFile("input", ".txt")
     tempFile.writeText(commandsForReduce.joinToString(separator = "\n"))
-    val process = Runtime.getRuntime().exec(arrayOf("/ADD YOUR PATH TO REDUCE/reduce-algebra/bin/call_reduce_with_input.sh",
+    val process = Runtime.getRuntime().exec(arrayOf("/home/jfabriko/PROGRAMOVANI/reduce-algebra/bin/call_reduce_with_input.sh",
         tempFile.absolutePath))
     val output1 = process.inputStream.bufferedReader().readLines()
 
