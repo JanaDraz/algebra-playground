@@ -272,7 +272,7 @@ fun caseStudyRepressilator3D(){
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
     val pmin : Double = 0.0//0.1
     val pmax : Double = 3.0//1.0
-    //compute reachability
+    //compute reachability  //TODO [-1,1]
     
     var delta1 : Double = 0.1
     var delta2 : Double = 0.01
@@ -280,6 +280,21 @@ fun caseStudyRepressilator3D(){
     var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
 }
+/*val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
+    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
+    val pmin : Double = 0.0//0.1
+    val pmax : Double = 3.0//1.0
+    //compute reachability  //TODO [-1,1]
+    
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+ * 
+ * Result?
+ */
+
+
 /*repressilator^>
  * val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
@@ -292,6 +307,20 @@ fun caseStudyRepressilator3D(){
  * Result of reach A,B: {[0.1,1.0]}
 {[0.1,1.0]}
  */
+ 
+ fun caseStudyRepressilator5D(){
+    val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5D")
+    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
+    val pmin : Double = 0.0//0.1
+    val pmax : Double = 3.0//1.0
+    //compute reachability
+    
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    println( slodi )
+}
 
 
 fun main(args: Array<String>) {
@@ -316,11 +345,14 @@ fun main(args: Array<String>) {
     
     //28.3.2022 - seir jeste pojede, ted zkusime neco mensiho hybridne s pythonem... prijde zrychleni?
     //29.3.2022 - now try combined seir, timeout is 1min...
-    caseStudySEIR_SimpleNormReachability()
+    //caseStudySEIR_SimpleNormReachability()
     
-    //28.3.2022 dobehlo rychle
-    //Result of reach A,B: {[0.1,1.0]} / = input pars
+    //28.3.2022 dobehlo rychle, ale zadani nebylo ok
+    //29.3.2022 input interval [0,3] : Result of reach A,B: {[0.0,0.1]}
+    //?[-1,1]
     //caseStudyRepressilator3D()
+    
+    caseStudyRepressilator5D()
     
     //simplifyAPolynomialExpression( "(1.0 + 2.1)*x-(20*p-1.0008)*(0.0000001-0.0000009)*x")
     
