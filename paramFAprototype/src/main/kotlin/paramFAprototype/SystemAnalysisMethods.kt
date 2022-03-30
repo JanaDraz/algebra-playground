@@ -1395,14 +1395,14 @@ fun getListOfSuccessorsAndParameterSets( stateAndPar : QueueItem, biosystem : Bi
              for( vari in 0..(n-1) ){
                 //upper neighbour if exists [i,i+1]->[i+1,i+2] all have to be tresholds
                 if( state[vari] < (biosystem.getTresCount(vari)-2) ){
-                    var slodi1 : SortedListOfDisjunctIntervalsDouble =       get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, 1, delta1, delta2 )
+                    var slodi1 : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, 1, delta1, delta2 )
                     if( slodi1.isNonempty() ){
                         result.add( QueueItem( getUpperNeighbourOn( vari, state ), vari, -1, slodi1 ) )
                     }
                 }
                 //lower neighbour if exists
                 if( state[vari] > 0 ){
-                    var slodi2 : SortedListOfDisjunctIntervalsDouble =            get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, -1, delta1, delta2 )
+                    var slodi2 : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( inter, biosystem, state, entryDir, entryOr, vari, -1, delta1, delta2 )
                     if( slodi2.isNonempty() ){
                         result.add( QueueItem( getLowerNeighbourOn( vari, state ), vari, 1, slodi2 ) )
                     }
@@ -1450,6 +1450,13 @@ fun findParamValuesForReachabilityOfBFromA( pmin : Double, pmax : Double, biosys
             var entryDirQI : Int = qitem.getDir()
             var entryOrQI : Int = qitem.getOr()
 
+            // HERE THE METHOD USED FOR SUCCESSORS IS SET BY ADDING SUFFIX TO METHOD
+            // "getListOfSuccessorsAndParameterSets"
+            //      FA = "" 
+            //      FA -1min-> QDA = "COMBINEDtimeout"
+            //      QDA = "QDA" 
+            //
+            // ("COMBINEDfutures" does not do what we want, not used)
             for( succQI in getListOfSuccessorsAndParameterSetsCOMBINEDtimeout( qitem, biosystem, delta1, delta2) ){
                 var succState : Array<Int> = succQI.getR()
                 var succDir : Int = succQI.getDir()

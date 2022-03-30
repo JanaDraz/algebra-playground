@@ -431,34 +431,43 @@ fun findParamValuesForReachabilityOfBFromAforPWMA( pmin : Double, pmax : Double,
             var parset : SortedListOfDisjunctIntervalsDouble = qitem.getSlodi()
             var entryDirQI : Int = qitem.getDir()
             var entryOrQI : Int = qitem.getOr()
+            
+            /*The queue can be very long. At the moment when the state comes up,
+             * it is very possible that similar rectangle and entry and parset 
+             * has come up several times before and the parset that was not explored
+             * when the state was put in queue is explored now. Therefore second
+             * check of isSlodiAlreadyExplored takes place here.
+             */ //NOPE, visited is updated, doesn't start properly with the first rectangle, leave it without this check.
+            //if( !visitedStates.isSlodiAlreadyExplored( state, entryDirQI, entryOrQI, parset ) ){
 
-            for( succQI in getListOfSuccessorsAndParameterSetsForPWMA( qitem, biosystem, delta1, delta2) ){
-                var succState : Array<Int> = succQI.getR()
-                var succDir : Int = succQI.getDir()
-                var succOr : Int = succQI.getOr()
-                var succParset : SortedListOfDisjunctIntervalsDouble = succQI.getSlodi()
-                visitedStates.markAsVisited( succState )
+                for( succQI in getListOfSuccessorsAndParameterSetsForPWMA( qitem, biosystem, delta1, delta2) ){
+                    var succState : Array<Int> = succQI.getR()
+                    var succDir : Int = succQI.getDir()
+                    var succOr : Int = succQI.getOr()
+                    var succParset : SortedListOfDisjunctIntervalsDouble = succQI.getSlodi()
+                    visitedStates.markAsVisited( succState )
                 
-                if( reachVerbosity > 1 ) println( "Successor state "+displayQueueItem( succQI ) )
-                /*put the successors in queue if 
-                    - they do not intersect with B
-                    - their rectangle and parset is worth further exploring
-                their parameters are intersection of state pars with transition pars
-                otherwise union their params with actual result
-                */
-                if( intersectionNonemptyListOfConstraintsPWMA( succState, constraintsB, biosystem ) ){
-                    result.uniteWithOtherDisjunctList( succParset )
-                    println("Uniting result with "+succParset.toString())
-                }else{
-                    if( !visitedStates.isSlodiAlreadyExplored( succState, succDir, succOr, succParset ) ){
-                        var newSlodi : SortedListOfDisjunctIntervalsDouble = visitedStates.getSlodiToExploreFurther( succState, succDir, succOr, succParset )
-                        queueStates.add( QueueItem( succState, succDir, succOr, newSlodi ) ) 
-                        if( reachVerbosity > 0) println("Adding state "+displayState(succState)+" with params "+succParset.toString() )
-                        if( reachVerbosity > 0) println("   Queue size "+queueStates.size )
+                    if( reachVerbosity > 1 ) println( "Successor state "+displayQueueItem( succQI ) )
+                    /*put the successors in queue if 
+                        - they do not intersect with B
+                        - their rectangle and parset is worth further exploring
+                    their parameters are intersection of state pars with transition pars
+                    otherwise union their params with actual result
+                    */
+                    if( intersectionNonemptyListOfConstraintsPWMA( succState, constraintsB, biosystem ) ){
+                        result.uniteWithOtherDisjunctList( succParset )
+                        println("Uniting result with "+succParset.toString())
+                    }else{
+                        if( !visitedStates.isSlodiAlreadyExplored( succState, succDir, succOr, succParset ) ){
+                            var newSlodi : SortedListOfDisjunctIntervalsDouble = visitedStates.getSlodiToExploreFurther( succState, succDir, succOr, succParset )
+                            queueStates.add( QueueItem( succState, succDir, succOr, newSlodi ) ) 
+                            if( reachVerbosity > 0) println("Adding state "+displayState(succState)+" with params "+succParset.toString() )
+                            if( reachVerbosity > 0) println("   Queue size "+queueStates.size )
+                        }
                     }
+                    visitedStates.addSlodiToExplored( biosystem, succState, succDir, succOr, succParset )
                 }
-                visitedStates.addSlodiToExplored( biosystem, succState, succDir, succOr, succParset )
-            }
+            //}
         }
         println("Visited states data: checkpoint=${checkpoint}:"+visitedStates.toString())
     }
