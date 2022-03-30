@@ -7,12 +7,14 @@ import cc.redberry.rings.bigint.BigInteger
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial
 import cc.redberry.rings.poly.univar.UnivariatePolynomial
 
+/*
 typealias NumQ = Rational<BigInteger>
 typealias MPolyInQ = MultivariatePolynomial<NumQ>
 typealias UPolyInQ = UnivariatePolynomial<NumQ>
 typealias MPolyInZ = MultivariatePolynomial<BigInteger>
 typealias UMPolyInZ = UnivariatePolynomial<MPolyInZ>
 typealias UPolyInZ = UnivariatePolynomial<BigInteger>
+*/
 
 /*
  * Parse rational (Q) number from a decimal string,

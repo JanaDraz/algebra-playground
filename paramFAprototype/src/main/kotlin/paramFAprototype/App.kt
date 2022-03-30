@@ -33,7 +33,7 @@ fun exampleLVP(){
     
     var slodiAC: SortedListOfDisjunctIntervalsDouble = findSlodiFor1ParamDouble( 0.1, 0.5, systemLVexample, arrayOf(1,1), 0, -1, 0, 1, 0.01, divideP )
     
-    println("CASE-EXAMPLE-LV-1PAR p:") //? is this dreal reasoning mehthod? probably...
+    println("CASE-EXAMPLE-LV-1PAR p:") //DREAL REASONING
     println("C->A for p in "+slodiCA.toString()) //C->A for p in {[0.16250000000000003,0.5]}
     println("A->B for p in "+slodiAB.toString()) //A->B for p in {[0.2,0.5]}
     println("B->A for p in "+slodiBA.toString()) //B->A for p in {[0.1,0.15000000000000002]}
@@ -55,19 +55,19 @@ fun exampleLVP_sampling(){
     
     var slodiAC: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVexample, arrayOf(2,1), 0, 1, 0, -1, delta1, delta2 )
 
-    println("CASE-EXAMPLE-LV-1PAR p:")           //v results for whole intervals method (dreal sampling? probably) below
+    println("CASE-EXAMPLE-LV-1PAR p:")           //v results for whole intervals method (DREAL REASONING from exampleLVP) below
     println("C->A for p in "+slodiCA.toString()) //C->A for p in {[0.16250000000000003,0.5]}
     println("A->B for p in "+slodiAB.toString()) //A->B for p in {[0.2,0.5]}
     println("B->A for p in "+slodiBA.toString()) //B->A for p in {[0.1,0.15000000000000002]}
     println("A->C for p in "+slodiAC.toString()) //A->C for p in {[0.1,0.15000000000000002]}
-/* results for sampling methods below
- CASE-EXAMPLE-LV-1PAR p: 0.1,0.01
+/* results for SAMPLING methods below
+ CASE-EXAMPLE-LV-1PAR p: 0.1,0.01 (deltas)
 C->A for p in {(0.16250000000000003,0.5]}
 A->B for p in {(0.20625000000000002,0.5]}
 B->A for p in {(0.16250000000000003,0.5]}
 A->C for p in {(0.16250000000000003,0.5]}
 * 
-CASE-EXAMPLE-LV-1PAR p: 0.01, 0.001
+CASE-EXAMPLE-LV-1PAR p: 0.01, 0.001 (different deltas)
 C->A for p in {(0.16718750000000002,0.5]}
 A->B for p in {(0.20703125,0.5]}
 B->A for p in {(0.16718750000000002,0.5]}
@@ -77,7 +77,7 @@ A->C for p in {(0.16640625000000003,0.5]}
 
 
 fun caseStudyLVPPSquared(){
- //p,p^2 one parameter synthesis, dreal reasoning probably
+ //p,p^2 one parameter synthesis, DREAL REASONING
     
     var systemLVp : BioSystem = getBioSystemByName( "CASE000aLVPARSQUARED" )
     var divideP : Int = 5
@@ -104,8 +104,41 @@ fun caseStudyLVPPSquared(){
     //of the state rectangle p=0.1 vs p=0.2, q=0.01 vs q=0.04,5,6
 }
 
+fun caseStudyLVPPSquared_QDA(){
+ //p,p^2 one parameter synthesis QDA
+    
+    var systemLVp : BioSystem = getBioSystemByName( "CASE000aLVPARSQUARED" )
+    var delta1 : Double = 0.001
+    var delta2 : Double = 0.001
+
+    println("CASE000a LV PARSQUARED p QDA, d1=$delta1, d2=$delta2:")
+    
+    //NOTE: Input facet orientation for Python QDA is 0 and 1 (not -1 and 1)
+    
+    val succsOfC_forCA : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[2,1]", "0", "1", "0.1", "0.5", "0.001", "30.0" )
+    println("Succs of C (for CA):")
+    println(succsOfC_forCA)
+    
+    val succsOfA_forAB : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[1,1]", "0", "1", "0.1", "0.5", "0.001", "30.0" )
+    println("Succs of A (for AB):")
+    println(succsOfA_forAB)
+    
+    val succsOfB_forBA : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[0,1]", "1", "1", "0.1", "0.5", "0.001", "30.0")
+    println("Succs of B (for BA):")
+    println(succsOfB_forBA)
+    
+    val succsOfA_forAC : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[1,1]", "0", "0", "0.1", "0.5", "0.001", "30.0" )
+    println("Succs of A (for AC):")
+    println(succsOfA_forAC)
+
+//to try if not enough time
+//    systemLVp.setMaxT( "30.0" ) //BA
+//    systemLVp.setMaxT( "40.0" ) //AC
+ 
+}
+
 fun caseStudyLVPPSquared_sampling(){
- //p,p^2 one parameter synthesis
+ //p,p^2 one parameter synthesis SAMPLING
     
     var systemLVp : BioSystem = getBioSystemByName( "CASE000aLVPARSQUARED" )
     var delta1 : Double = 0.001
@@ -120,11 +153,11 @@ fun caseStudyLVPPSquared_sampling(){
     systemLVp.setMaxT( "30.0" )
     var slodi_BA: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(0,1), 1, 1, 0, 1, delta1, delta2 )//may need 1,1 ingoing facet
 
-    systemLVp.setMaxT( "40.0" )
+    systemLVp.setMaxT( "40.0" )                         //the same method with Interval input is used in big reachability
     var slodi_AC: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(1,1), 0, -1, 0, 1, delta1, delta2 )
     
     println("CASE000a LV PARSQUARED p sampling, d1=$delta1, d2=$delta2:")
-                                                    //whole intervals for comparison:
+//SAMPLING results below:                           //whole intervals (DREAL REASONING) for comparison:
 //    println("C->A for p in "+slodi_CA.toString()) //C->A for p in {[0.1875,0.5]}
 //    println("A->B for p in "+slodi_AB.toString()) //A->B for p in {[0.17500000000000002,0.5]}
     println("B->A for p in "+slodi_BA.toString())   //B->A for p in {[0.1,0.125]}
@@ -221,6 +254,38 @@ fun caseStudyLVSmallReachability(){
 //Result of reach A,B: {[0.1,0.20625000000000002)}
 //{[0.1,0.20625000000000002)}
 
+/* ...bonus (non maf, non polyn)
+ * Brusselator case study on parameter b values for reachability.
+ * 100 x 100 pieces
+ * A = [a1,a2] = ?
+ * B = [b1,b2] = ?
+ * C = [c1,c2] = ?
+ * For b = 3 wanted reachability situation:   A->B,   (B->A),   A-x->C, (B-x->C)
+ * For b = 1.7 wanted reachability situation: A-x->B, (B-x->A), A->C,   (B->C)
+ * minimal input addmissible valuatoins: [1.7,3.0]
+ * run for FA-1min->QDA
+ */
+fun caseBRUSSELATORreachability_sampling(){
+    //just one parameter 3 rectangles find out the directions of flow
+    var systemBRU : BioSystem = getBioSystemByName( "CASE002aBRUSSELATOR1par" )
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    val pmin = 1.7
+    val pmax = 3.0    
+    
+    /*val stateA : Array<Int> = arrayOf( , )
+    val constraintsC : List<ConstraintReachable> = ?
+    val constraintsB : List<ConstraintReachable> = ?
+    
+    val slodiAB : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA : Array<Int>, entryDir : Int, entryOr : Int,constraintsB : List<ConstraintReachable>, delta1, delta2 )
+
+    val slodiAC : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA : Array<Int>, entryDir : Int, entryOr : Int,constraintsC : List<ConstraintReachable>, delta1, delta2 )
+
+    println("CASE-BRU-1PAR b:")           
+    println("A->B for b in "+slodiAB.toString())
+    println("A->C for b in "+slodiAC.toString())*/
+}
+
 
 fun caseStudySEIR(){
     //CASE001aSEIR1par
@@ -270,8 +335,8 @@ fun caseStudySEIR_SimpleNormReachability(){
 fun caseStudyRepressilator3D(){
     val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
-    val pmin : Double = 0.0//0.1
-    val pmax : Double = 3.0//1.0
+    val pmin : Double = /*-1.0*/ 0.0 //0.1
+    val pmax : Double = /*3.0*/  3.0 //1.0
     //compute reachability  //TODO [-1,1]
     
     var delta1 : Double = 0.1
@@ -280,7 +345,24 @@ fun caseStudyRepressilator3D(){
     var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
 }
-/*val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
+
+/*[-1,3] -> result zhruba [-1,0.149...]
+ * val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
+    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
+    val pmin : Double = -1.0//0.0//0.1
+    val pmax : Double = 3.0 //3.0//1.0
+    //compute reachability  //TODO [-1,1]
+    
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    println( slodi )
+ * 
+ */
+
+/*mozna jeste nebyly constanty +0.1 v obehu... pro jistotu jeste jednou
+ * val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
     val pmin : Double = 0.0//0.1
     val pmax : Double = 3.0//1.0
@@ -291,23 +373,10 @@ fun caseStudyRepressilator3D(){
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
     var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
  * 
- * Result?
+ * Result: ????{[0.0,0.1]}????
  */
 
-
-/*repressilator^>
- * val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
-    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
-    val pmin : Double = 0.1
-    val pmax : Double = 1.0
-    //compute reachability
-    
-    var delta1 : Double = 0.1
-    var delta2 : Double = 0.01
- * Result of reach A,B: {[0.1,1.0]}
-{[0.1,1.0]}
- */
- 
+/*  
  fun caseStudyRepressilator5D(){
     val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5D")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
@@ -320,39 +389,79 @@ fun caseStudyRepressilator3D(){
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
     var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
+}*/
+
+ fun caseStudyRepressilator5DSimple(){
+    val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5DSimple")
+    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
+    val pmin : Double = 0.0//0.1
+    val pmax : Double = 3.0//1.0
+    //compute reachability
+    
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    println( slodi )
 }
 
+ fun caseStudyRepressilator5DVerySimple(){
+    val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5DVerySimple")
+    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
+    val pmin : Double = 0.0//0.1
+    val pmax : Double = 3.0//1.0
+    //compute reachability
+    
+    var delta1 : Double = 0.1
+    var delta2 : Double = 0.01
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    //00000 - a corner
+    //11111 - the centre
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(0,0,0,0,0), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    println( slodi )
+}
 
 fun main(args: Array<String>) {
     
-//DONE    exampleLVP()
+//done    exampleLVP()
 
-//    exampleLVP_sampling()
+//done    exampleLVP_sampling()
     
-//    caseStudyLVPPSquared()
+//done    caseStudyLVPPSquared()
 
-//    caseStudyLVPPSquared_sampling()
+//done    caseStudyLVPPSquared_sampling()
+//co neslo v caseStudyLVPPSquared_sampling pomoci FA, tu s QDA:
+//done    caseStudyLVPPSquared_QDA()
 
-//    caseStudyLVPQ()
+//done    caseStudyLVPQ()
 
-    //caseStudyLVReachability()  //nedojelo do konce
+    //nedojelo do konce jen s FA
+    //30.3.2022 jet s timetoutem FA->QDA: Result {[0.133984375,0.2],[0.21274414062500002,0.30000000000000004],[0.30625,0.5]}
+//done    caseStudyLVReachability()
 
     /**
      * the two small reachabilities with whole initial rectangles follow
      */
     //done -with QDA and -with the combined FA/QDA timeout 1min, always FA
-    //caseStudyLVSmallReachability()
+//done    caseStudyLVSmallReachability()
     
     //28.3.2022 - seir jeste pojede, ted zkusime neco mensiho hybridne s pythonem... prijde zrychleni?
     //29.3.2022 - now try combined seir, timeout is 1min...
-    //caseStudySEIR_SimpleNormReachability()
+//done    caseStudySEIR_SimpleNormReachability()
     
     //28.3.2022 dobehlo rychle, ale zadani nebylo ok
     //29.3.2022 input interval [0,3] : Result of reach A,B: {[0.0,0.1]}
-    //?[-1,1]
-    //caseStudyRepressilator3D()
+    //30.3.2022 input interval [-1,1]: Result of reach A,B; {[-1,0.149...}
+    //30.3.2022 jeste jednou [0,3] pro srovnani s above (mozna nebyly konstanty 0.1+produkcni pritomne) OK Result of reach A,B: {[0.0,0.1]}
+//done    caseStudyRepressilator3D()
     
-    caseStudyRepressilator5D()
+    //30.3.2022 bezelo celou noc a stejne moc dlouha fronta, znova s mene tresholdy (4^5 nebo 6x6x6x6x6 misto 10x...)
+    //caseStudyRepressilator5D()
+    //30.3.2022 4x4x... tresholds, constraint >= 0.75 is satisfied for init for the small num of states 
+    //30.3.2022 again with different init: 00000 for whole [0,3] is reachable 
+//done    caseStudyRepressilator5DVerySimple()
+    //30.3.2022 6x6x... tresholdy, init: 21111 
+    caseStudyRepressilator5DSimple()
     
     //simplifyAPolynomialExpression( "(1.0 + 2.1)*x-(20*p-1.0008)*(0.0000001-0.0000009)*x")
     
@@ -411,6 +520,5 @@ fun main(args: Array<String>) {
     
     //print hello world
     //println( App().greeting )
-    
     
 }

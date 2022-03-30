@@ -12,6 +12,16 @@ fun getResultFor1paramFromPython( biosystemStr : String, rStr : String, eDirStr 
     return convertOutputToListOfSuccs( output1 )//dig results out somehow...
 }
 
+fun getResultFor1paramONLYFromPython( biosystemStr : String, rStr : String, eDirStr : String, eOriStr : String, pminStr : String, pmaxStr : String, deltaStr : String, maxT : String ) : List<String> {
+    
+    //println("Calling Python:"+biosystemStr+" "+rStr+" "+eDirStr+" "+eOriStr+" "+pminStr+" "+pmaxStr+" "+deltaStr+" "+maxT)
+    val process = Runtime.getRuntime().exec( arrayOf("/usr/bin/python3", "/home/jfabriko/PROGRAMOVANI/kotlin-pokusy/pythQDApar.py", biosystemStr, rStr, eDirStr, eOriStr, pminStr, pmaxStr, deltaStr, maxT ))
+    val output1 = process.inputStream.bufferedReader().readLines()
+    //println("Python output:")
+    //println( output1 )
+    return output1//dig results out somehow...
+}
+
 //TODO
 //assumes +1 -1 facet orientations
 //output from the Python script into the list of successors

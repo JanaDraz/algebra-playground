@@ -8,7 +8,10 @@ fun getResultFromDreal(commandsForDreal: ArrayList<String>): List<String> {
     val process = Runtime.getRuntime().exec(arrayOf("/home/jfabriko/PROGRAMOVANI/dReal-3.16.06.02-linux/bin/dReal", "--visualize", 
         tempFile.absolutePath))
     val output1 = process.inputStream.bufferedReader().readLines()
-
+    
+    //remove tempFile.absolutePath skriptem?
+    val delProcess = Runtime.getRuntime().exec(arrayOf("rm",tempFile.absolutePath))
+    
     return output1 //digResultFromReduceOutput(output1)
 }
 
