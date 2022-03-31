@@ -1457,7 +1457,7 @@ fun findParamValuesForReachabilityOfBFromA( pmin : Double, pmax : Double, biosys
             //      QDA = "QDA" 
             //
             // ("COMBINEDfutures" does not do what we want, not used)
-            for( succQI in getListOfSuccessorsAndParameterSetsCOMBINEDtimeout( qitem, biosystem, delta1, delta2) ){
+            for( succQI in getListOfSuccessorsAndParameterSets( qitem, biosystem, delta1, delta2) ){
                 var succState : Array<Int> = succQI.getR()
                 var succDir : Int = succQI.getDir()
                 var succOr : Int = succQI.getOr()

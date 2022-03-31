@@ -253,6 +253,7 @@ fun caseStudyLVSmallReachability(){
 //11 00 init:
 //Result of reach A,B: {[0.1,0.20625000000000002)}
 //{[0.1,0.20625000000000002)}
+
 /* ...bonus (non maf, non polyn)
  * Brusselator case study on parameter b values for reachability.
  * 100 x 100 pieces
@@ -281,7 +282,7 @@ fun caseBRUSSELATORreachability_sampling(){
     //C overapproximated by: x in [0.9,1.1] and y in [1.6,1.8]
     val constraintsC : List<ConstraintReachable> = listOf<ConstraintReachable>( ConstraintReachable( 0, true, 0.9 ), ConstraintReachable( 0, false, 1.1 ), ConstraintReachable( 1, true, 1.6 ), ConstraintReachable( 1, false, 1.8 ) )
     
-    val slodiAB : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA : Array<Int>, 0, -1, constraintsB, delta1, delta2 )
+    val slodiAB : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA, 0, -1, constraintsB, delta1, delta2 )
     println("CASE-BRU-1PAR b, partial result for A->B:")  
     println("A->B for b in "+slodiAB.toString())
     
@@ -465,9 +466,15 @@ fun main(args: Array<String>) {
     //30.3.2022 4x4x... tresholds, constraint >= 0.75 is satisfied for init for the small num of states 
     //30.3.2022 again with different init: 00000 for whole [0,3] is reachable 
 //done    caseStudyRepressilator5DVerySimple()
-    //30.3.2022 6x6x... tresholdy, init: 21111 
-    caseStudyRepressilator5DSimple()
-    
+    //30.3.2022 6x6x... tresholdy, init: 21111 runs more than 24h, ~5000 states, and increasing
+//    caseStudyRepressilator5DSimple()
+
+
+    //31.3.2022 Brusselator try with only FA
+    //if not feasable, try with combined FA -timeout-> QDA
+    caseBRUSSELATORreachability_sampling()
+
+    //bits and odds:
     //simplifyAPolynomialExpression( "(1.0 + 2.1)*x-(20*p-1.0008)*(0.0000001-0.0000009)*x")
     
     //var reduceOutput : List<String> = simplifyAPolynomialExpression( "(p>=0.1)and(((0+0.05263157894736788)*(20.0*p+-3.0000000000000004)*(66.66666666666667*q+-1.6666666666666667)+(0+0.05263157894736788)*(20.0*p+-3.0000000000000004)*(66.66666666666667*q+-1.6666666666666667)+(0+0.05263157894736788)*(20.0*p+-3.0000000000000004)*(66.66666666666667*q+-1.6666666666666667)+(0+3.31423485147146e-17)*(20.0*p+-3.0000000000000004)+(0+0.1473684210526302)*(66.66666666666667*q+-1.6666666666666667)+0)>=1)")    

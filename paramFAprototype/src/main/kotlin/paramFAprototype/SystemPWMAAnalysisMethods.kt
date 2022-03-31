@@ -405,7 +405,7 @@ fun findParamValuesForReachabilityOfBFromAforPWMA( pmin : Double, pmax : Double,
       
    //put the initial rectangle in queue if it does not have intersection with B
    //otherwise result is [pmin,pmax]
-   if( intersectionNonemptyListOfConstraintsForPWMA( stateA, constraintsB, biosystem ) ){
+   if( intersectionNonemptyListOfConstraintsPWMA( stateA, constraintsB, biosystem ) ){
        result.add( IntervalDouble( pmin, true, false, pmax, true, false ) )
        if( reachVerbosity > 0 ) println( "A cap B nonempty, result="+result.toString() )
    }else{

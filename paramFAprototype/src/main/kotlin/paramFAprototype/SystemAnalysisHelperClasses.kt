@@ -361,34 +361,21 @@ class ConstraintReachable( variable : Int, ge : Boolean, value : Double ) {
 }
 
 fun intersectionNonemptyListOfConstraints( stateA : Array<Int>, constraintsB : List<ConstraintReachable>, biosystem : BioSystem ) : Boolean {
-    var result : Boolean = false
+    var result : Boolean = true
     for( constraint in constraintsB ){
-        if( constraint.hasIntersectionWith( stateA, biosystem ) ){
-            result = true
-        }
+        result = result && constraint.hasIntersectionWith( stateA, biosystem )
     }
     return result
 }
 
 fun intersectionNonemptyListOfConstraintsPWMA( stateA : Array<Int>, constraintsB : List<ConstraintReachable>, biosystem : BioSystemPWMA ) : Boolean {
-    var result : Boolean = false
+    var result : Boolean = true
     for( constraint in constraintsB ){
-        if( constraint.hasIntersectionWith( stateA, biosystem ) ){
-            result = true
-        }
+        result = result && constraint.hasIntersectionWith( stateA, biosystem )
     }
     return result
 }
 
-fun intersectionNonemptyListOfConstraintsForPWMA( stateA : Array<Int>, constraintsB : List<ConstraintReachable>, biosystem : BioSystemPWMA ) : Boolean {
-    var result : Boolean = false
-    for( constraint in constraintsB ){
-        if( constraint.hasIntersectionWith( stateA, biosystem ) ){
-            result = true
-        }
-    }
-    return result
-}
 
 /* Template function for getting a value with given key from a map,
  * if the key is not present, a default value is returned. 
