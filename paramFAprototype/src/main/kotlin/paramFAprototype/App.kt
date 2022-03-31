@@ -253,13 +253,15 @@ fun caseStudyLVSmallReachability(){
 //11 00 init:
 //Result of reach A,B: {[0.1,0.20625000000000002)}
 //{[0.1,0.20625000000000002)}
-
 /* ...bonus (non maf, non polyn)
  * Brusselator case study on parameter b values for reachability.
  * 100 x 100 pieces
- * A = [a1,a2] = ?
- * B = [b1,b2] = ?
- * C = [c1,c2] = ?
+ * A = [a1,a2] = [10,43] (real point [0.63,2.6] upper y turning point of limit cycle for b=3) -->
+ * B = [b1,b2] = [62,14] (real point [3.75,0.88] up x turning point of limit cycle for b=3) from up to left
+ * C = [c1,c2] = [16,28] (real point [1,1.7], the central point of spiral for b=1.7)
+D=[0.375,3.5] [6, 58] |^
+E=[3,0.9] [49, 15] \v
+F=[3,2.25] [49, 37] <--
  * For b = 3 wanted reachability situation:   A->B,   (B->A),   A-x->C, (B-x->C)
  * For b = 1.7 wanted reachability situation: A-x->B, (B-x->A), A->C,   (B->C)
  * minimal input addmissible valuatoins: [1.7,3.0]
@@ -273,17 +275,20 @@ fun caseBRUSSELATORreachability_sampling(){
     val pmin = 1.7
     val pmax = 3.0    
     
-    /*val stateA : Array<Int> = arrayOf( , )
-    val constraintsC : List<ConstraintReachable> = ?
-    val constraintsB : List<ConstraintReachable> = ?
+    val stateA : Array<Int> = arrayOf( 10,43 )
+    //B overapproximated by: x >= 3.5 and y <= 1.0
+    val constraintsB : List<ConstraintReachable> = listOf<ConstraintReachable>( ConstraintReachable( 0, true, 3.5 ), ConstraintReachable( 1, false, 1.0 ) )
+    //C overapproximated by: x in [0.9,1.1] and y in [1.6,1.8]
+    val constraintsC : List<ConstraintReachable> = listOf<ConstraintReachable>( ConstraintReachable( 0, true, 0.9 ), ConstraintReachable( 0, false, 1.1 ), ConstraintReachable( 1, true, 1.6 ), ConstraintReachable( 1, false, 1.8 ) )
     
-    val slodiAB : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA : Array<Int>, entryDir : Int, entryOr : Int,constraintsB : List<ConstraintReachable>, delta1, delta2 )
-
-    val slodiAC : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA : Array<Int>, entryDir : Int, entryOr : Int,constraintsC : List<ConstraintReachable>, delta1, delta2 )
-
-    println("CASE-BRU-1PAR b:")           
+    val slodiAB : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA : Array<Int>, 0, -1, constraintsB, delta1, delta2 )
+    println("CASE-BRU-1PAR b, partial result for A->B:")  
     println("A->B for b in "+slodiAB.toString())
-    println("A->C for b in "+slodiAC.toString())*/
+    
+    val slodiAC : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA, 0, -1, constraintsC, delta1, delta2 )
+    println("CASE-BRU-1PAR b both reachabilities:")           
+    println("A->B for b in "+slodiAB.toString())
+    println("A->C for b in "+slodiAC.toString())
 }
 
 
