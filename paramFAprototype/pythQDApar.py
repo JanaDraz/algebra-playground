@@ -471,7 +471,7 @@ def key_into_facet_in_successor( key ):
 def key_into_rectangle( key, r ): #key=facet of r, into successor rectangle of r
     rectangle = r.copy()
     facet = key_into_facet( key ) #dir,ori
-    if( facet[1] == '0' ):
+    if( facet[1] == 0 ):
         rectangle[ facet[0] ] = rectangle[ facet[0] ] - 1
     else:
         rectangle[ facet[0] ] = rectangle[ facet[0] ] + 1
