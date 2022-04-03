@@ -277,19 +277,34 @@ fun caseBRUSSELATORreachability_sampling(){
     val pmax = 3.0    
     
     val stateA : Array<Int> = arrayOf( 10,43 )
+    val stateC : Array<Int> = arrayOf( 16,28 )
+    val stateD : Array<Int> = arrayOf( 6,58 )
+    val stateX : Array<Int> = arrayOf( 49,13 )
+    //A overapproximated by: y >= 4.0
+    val constraintsA : List<ConstraintReachable> = listOf<ConstraintReachable>( /*ConstraintReachable( 0, false, 1.0 ),*/ ConstraintReachable( 1, true, 4.0 ) )
     //B overapproximated by: x >= 3.5 and y <= 1.0
     val constraintsB : List<ConstraintReachable> = listOf<ConstraintReachable>( ConstraintReachable( 0, true, 3.5 ), ConstraintReachable( 1, false, 1.0 ) )
     //C overapproximated by: x in [0.9,1.1] and y in [1.6,1.8]
     val constraintsC : List<ConstraintReachable> = listOf<ConstraintReachable>( ConstraintReachable( 0, true, 0.9 ), ConstraintReachable( 0, false, 1.1 ), ConstraintReachable( 1, true, 1.6 ), ConstraintReachable( 1, false, 1.8 ) )
     
-    val slodiAB : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA, 0, -1, constraintsB, delta1, delta2 )
+    val constraintsD : List<ConstraintReachable> = listOf<ConstraintReachable>( /*ConstraintReachable( 0, false, 1.0 ),*/ ConstraintReachable( 1, true, 3.0 ) )
+    
+    /*val slodiAB : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA, 0, -1, constraintsB, delta1, delta2 )
     println("CASE-BRU-1PAR b, partial result for A->B:")  
     println("A->B for b in "+slodiAB.toString())
     
     val slodiAC : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateA, 0, -1, constraintsC, delta1, delta2 )
     println("CASE-BRU-1PAR b both reachabilities:")           
     println("A->B for b in "+slodiAB.toString())
-    println("A->C for b in "+slodiAC.toString())
+    println("A->C for b in "+slodiAC.toString()) */
+    
+    //question - is it possible to escape C and go above y=4?
+    val slodiCA : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateC, 1, -1, constraintsA, delta1, delta2 )
+    
+    println("***divide here")
+    
+    //question - does D escape C and go above y=3?
+    val slodiXD : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemBRU, stateD, 0, 1, constraintsD, delta1, delta2 )
 }
 
 
@@ -322,9 +337,9 @@ fun caseStudySEIR_SimpleNormReachability(){
     //compute reachability
     
     var delta1 : Double = 0.1
-    var delta2 : Double = 0.01
+    var delta2 : Double = 0.05
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
-    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemSEIR1par, arrayOf(9,0,0,0), /*0,0,*/3,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemSEIR1par, arrayOf(4,0,0,5), /*0,0,*/3,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
 }
 //?zkouset? init 8010 3,-1 with combined timeout reach A,B
@@ -338,22 +353,23 @@ fun caseStudySEIR_SimpleNormReachability(){
 //Result of reach A,B: {[0.19375,1.0]}
 //{[0.19375,1.0]}
 
+
 fun caseStudyRepressilator3D(){
-    val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
+    val systemRep3d1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
-    val pmin : Double = /*-1.0*/ 0.0 //0.1
-    val pmax : Double = /*3.0*/  3.0 //1.0
-    //compute reachability  //TODO [-1,1]
+    val pmin : Double = 0.1 //-5.0 /*-1.0*/ //0.0 //0.1
+    val pmax : Double = 0.15 //-1.0 /*3.0*/  //3.0 //1.0
+    //compute reachability  //TODO s mensim delta1
     
-    var delta1 : Double = 0.1
+    var delta1 : Double = 0.01
     var delta2 : Double = 0.01
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
-    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemRep3d1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
 }
 
 /*[-1,3] -> result zhruba [-1,0.149...]
- * val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
+ * val systemRep3d1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
     val pmin : Double = -1.0//0.0//0.1
     val pmax : Double = 3.0 //3.0//1.0
@@ -362,13 +378,13 @@ fun caseStudyRepressilator3D(){
     var delta1 : Double = 0.1
     var delta2 : Double = 0.01
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
-    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemRep3d1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
  * 
  */
 
 /*mozna jeste nebyly constanty +0.1 v obehu... pro jistotu jeste jednou
- * val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
+ * val systemRep3d1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3D")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
     val pmin : Double = 0.0//0.1
     val pmax : Double = 3.0//1.0
@@ -377,12 +393,12 @@ fun caseStudyRepressilator3D(){
     var delta1 : Double = 0.1
     var delta2 : Double = 0.01
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
-    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemRep3d1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
  * 
- * Result: ????{[0.0,0.1]}????
+ * Result: {[0.0,0.1]} yes it is the same 
  */
 
-/*  
+/*  too many tresholds
  fun caseStudyRepressilator5D(){
     val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5D")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
@@ -397,8 +413,9 @@ fun caseStudyRepressilator3D(){
     println( slodi )
 }*/
 
+//still too many tresholds (6^5 state invariants)
  fun caseStudyRepressilator5DSimple(){
-    val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5DSimple")
+    val systemREP5D : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5DSimple")
     val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
     val pmin : Double = 0.0//0.1
     val pmax : Double = 3.0//1.0
@@ -407,23 +424,44 @@ fun caseStudyRepressilator3D(){
     var delta1 : Double = 0.1
     var delta2 : Double = 0.01
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
-    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(2,1,1,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemREP5D, arrayOf(2,1,1,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
 }
 
  fun caseStudyRepressilator5DVerySimple(){
-    val systemSEIR1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5DVerySimple")
-    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
-    val pmin : Double = 0.0//0.1
-    val pmax : Double = 3.0//1.0
+    val systemRepres5d1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5DVerySimple")
+    
+    val pmin : Double = 3.0  //-5.0//0.0//0.1
+    val pmax : Double = 5.0 //0.0//3.0//1.0
     //compute reachability
     
     var delta1 : Double = 0.1
-    var delta2 : Double = 0.01
+    var delta2 : Double = 0.05
+    
+    val constraint1 : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//x0 >= 7.5
+    //above is reachable for whole [0,3] input par interval
+    //constraint1 means a whole facet of the phase space cube, where x0 between 7.07 and 10
+        
+    val constraint2 : List<ConstraintReachable> = listOf<ConstraintReachable>( 
+                                ConstraintReachable( 0, true, 7.5 ),
+                                ConstraintReachable( 1, true, 7.5 ),
+                                ConstraintReachable( 2, true, 7.5 ),
+                                ConstraintReachable( 3, true, 7.5 ),
+                                ConstraintReachable( 4, true, 7.5 ) )
+    
+    //above is reachable?? for which pars??
+    //constraint2 means the corner opposite to 00000 (state 22222)
+    
+    
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
     //00000 - a corner
-    //11111 - the centre
-    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemSEIR1par, arrayOf(0,0,0,0,0), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    //(11111 - the centre)
+    //22222 - the opposite corner
+    /*var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemRepres5d1par, arrayOf(0,0,0,0,0), 0,-1, listOf<ConstraintReachable>( constraint1 ), delta1, delta2 )
+    println( slodi ) */
+    
+    //after we explore pars, try reaching the corner:
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemRepres5d1par, arrayOf(0,0,0,0,0), 0,-1, constraint2, delta1, delta2 )
     println( slodi )
 }
 
@@ -452,27 +490,35 @@ fun main(args: Array<String>) {
 //done    caseStudyLVSmallReachability()
     
     //28.3.2022 - seir jeste pojede, ted zkusime neco mensiho hybridne s pythonem... prijde zrychleni?
-    //29.3.2022 - now try combined seir, timeout is 1min...
-//done    caseStudySEIR_SimpleNormReachability()
+    //29.3.2022 - now try combined seir, timeout is 1min... yes
+    //init different from 90000... (init=40005 nedojelo do asi tak 2 dni necelych, ani s QDA timeout)
+    caseStudySEIR_SimpleNormReachability()
     
     //28.3.2022 dobehlo rychle, ale zadani nebylo ok
     //29.3.2022 input interval [0,3] : Result of reach A,B: {[0.0,0.1]}
     //30.3.2022 input interval [-1,1]: Result of reach A,B; {[-1,0.149...}
     //30.3.2022 jeste jednou [0,3] pro srovnani s above (mozna nebyly konstanty 0.1+produkcni pritomne) OK Result of reach A,B: {[0.0,0.1]}
-//done    caseStudyRepressilator3D()
+    //1.4.2022 s [-5,-1] pro ohraniceni valid pars zleva cele valid
+    //1.4.2022 s [0.1,0.15] s delta1=delta2=0.01 pro zaplneni mezery delky 0.1 ve vypoctu param[0,3] (s delta1=0.1) OK valid all
+//    caseStudyRepressilator3D()
     
     //30.3.2022 bezelo celou noc a stejne moc dlouha fronta, znova s mene tresholdy (4^5 nebo 6x6x6x6x6 misto 10x...)
     //caseStudyRepressilator5D()
     //30.3.2022 4x4x... tresholds, constraint >= 0.75 is satisfied for init for the small num of states 
     //30.3.2022 again with different init: 00000 for whole [0,3] is reachable 
-//done    caseStudyRepressilator5DVerySimple()
+    //31.3.2022 init A=00000  B=2xxxx with params in [-10,10] ... moc velky parset 
+    //31.3.2022 init A=00000  B=2xxxx with params in [-5,0] ... all valid
+    //init A=00000 B=22222, params=< JET
+//    caseStudyRepressilator5DVerySimple()
+
     //30.3.2022 6x6x... tresholdy, init: 21111 runs more than 24h, ~5000 states, and increasing
-//    caseStudyRepressilator5DSimple()
+//too much tres    caseStudyRepressilator5DSimple()
 
 
     //31.3.2022 Brusselator try with only FA
-    //if not feasable, try with combined FA -timeout-> QDA
-    caseBRUSSELATORreachability_sampling()
+    //runs with FA only, how would the result change with combined FA -timeout-> QDA and the same settings?
+    //31.3.2022 points CA XD JEDE with FA (with QDA timeout JET? z analyzy jestli je avg time na stav vetsi nez 1 min? jet a porovnat vysledky...)
+//    caseBRUSSELATORreachability_sampling()
 
     //bits and odds:
     //simplifyAPolynomialExpression( "(1.0 + 2.1)*x-(20*p-1.0008)*(0.0000001-0.0000009)*x")

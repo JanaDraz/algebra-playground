@@ -1417,6 +1417,9 @@ fun getListOfSuccessorsAndParameterSets( stateAndPar : QueueItem, biosystem : Bi
 
 fun findParamValuesForReachabilityOfBFromA( pmin : Double, pmax : Double, biosystem : BioSystem, stateA : Array<Int>, entryDir : Int, entryOr : Int,constraintsB : List<ConstraintReachable>, delta1 : Double /* delta1 must be > delta2 */, delta2 : Double = 0.01 ) : SortedListOfDisjunctIntervalsDouble {
    val reachVerbosity = 1
+   //SEIR HEURISTIC = INVARIANT SUM OF COORDS +-1
+   val seirHeuristicsOn = true
+   var invariantSum : Int = 0 //will be computed from initial state
 
    //result is zero
    var result : SortedListOfDisjunctIntervalsDouble = SortedListOfDisjunctIntervalsDouble( mutableListOf<IntervalDouble>() )
@@ -1433,6 +1436,11 @@ fun findParamValuesForReachabilityOfBFromA( pmin : Double, pmax : Double, biosys
        
        if( reachVerbosity > 1) println("    Queue size "+queueStates.size )
        queueStates.add( QueueItem( stateA, entryDir, entryOr, initialParSlodi ) )
+       
+       if( seirHeuristicsOn ) {
+           for( i in stateA ) invariantSum += i
+       }
+       
        if( reachVerbosity > 0) println("Adding state "+displayState(stateA)+" with params "+initialParSlodi.toString())
        if( reachVerbosity > 1) println("    Queue size "+queueStates.size )
        //while the queue is not empty
@@ -1457,12 +1465,20 @@ fun findParamValuesForReachabilityOfBFromA( pmin : Double, pmax : Double, biosys
             //      QDA = "QDA" 
             //
             // ("COMBINEDfutures" does not do what we want, not used)
-            for( succQI in getListOfSuccessorsAndParameterSets( qitem, biosystem, delta1, delta2) ){
+            forallSuccs@ for( succQI in getListOfSuccessorsAndParameterSetsCOMBINEDtimeout( qitem, biosystem, delta1, delta2) ){
                 var succState : Array<Int> = succQI.getR()
                 var succDir : Int = succQI.getDir()
                 var succOr : Int = succQI.getOr()
                 var succParset : SortedListOfDisjunctIntervalsDouble = succQI.getSlodi()
                 visitedStates.markAsVisited( succState )
+
+                if( seirHeuristicsOn ) {
+                    var sum : Int = 0
+                    for( c in succState ) { 
+                        sum += c
+                    }
+                    if (( sum > (invariantSum + 1) ) || (sum < (invariantSum - 1)) ) continue@forallSuccs
+                }
                 
                 if( reachVerbosity > 1 ) println( "Successor state "+displayQueueItem( succQI ) )
                 /*put the successors in queue if 
