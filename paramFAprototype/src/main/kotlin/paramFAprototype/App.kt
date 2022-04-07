@@ -115,11 +115,11 @@ fun caseStudyLVPPSquared_QDA(){
     
     //NOTE: Input facet orientation for Python QDA is 0 and 1 (not -1 and 1)
     
-    val succsOfC_forCA : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[2,1]", "0", "1", "0.1", "0.5", "0.001", "30.0" )
+    val succsOfC_forCA : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[2,1]", "0", "1", "0.1", "0.5", "0.001", "10.0" )//maxt was 30 for the older output
     println("Succs of C (for CA):")
     println(succsOfC_forCA)
     
-    val succsOfA_forAB : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[1,1]", "0", "1", "0.1", "0.5", "0.001", "30.0" )
+    val succsOfA_forAB : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[1,1]", "0", "1", "0.1", "0.5", "0.001", "10.0" )//maxt was 30 for the older output
     println("Succs of A (for AB):")
     println(succsOfA_forAB)
     
@@ -127,7 +127,7 @@ fun caseStudyLVPPSquared_QDA(){
     println("Succs of B (for BA):")
     println(succsOfB_forBA)
     
-    val succsOfA_forAC : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[1,1]", "0", "0", "0.1", "0.5", "0.001", "30.0" )
+    val succsOfA_forAC : List<String> = getResultFor1paramONLYFromPython( "CASE000aLVPARSQUARED", "[1,1]", "0", "0", "0.1", "0.5", "0.001", "40.0" )//maxt was 30 for the older output
     println("Succs of A (for AC):")
     println(succsOfA_forAC)
 
@@ -141,13 +141,13 @@ fun caseStudyLVPPSquared_sampling(){
  //p,p^2 one parameter synthesis SAMPLING
     
     var systemLVp : BioSystem = getBioSystemByName( "CASE000aLVPARSQUARED" )
-    var delta1 : Double = 0.001
+    var delta1 : Double = 0.01
     var delta2 : Double = 0.001
     
     //result as a slodi
-//    var slodi_CA : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(2,1), 0, 1, 0, -1, delta1, delta2 )
+    var slodi_CA : SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(2,1), 0, 1, 0, -1, delta1, delta2 )
 
-//    var slodi_AB: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(1,1), 0, 1, 0, -1, delta1, delta2 )
+    var slodi_AB: SortedListOfDisjunctIntervalsDouble = get1ParamSetForTransitionSampleDREAL( 0.1, 0.5, systemLVp, arrayOf(1,1), 0, 1, 0, -1, delta1, delta2 )
 
     //try to catch even the slower evolution of the solutions
     systemLVp.setMaxT( "30.0" )
@@ -158,8 +158,8 @@ fun caseStudyLVPPSquared_sampling(){
     
     println("CASE000a LV PARSQUARED p sampling, d1=$delta1, d2=$delta2:")
 //SAMPLING results below:                           //whole intervals (DREAL REASONING) for comparison:
-//    println("C->A for p in "+slodi_CA.toString()) //C->A for p in {[0.1875,0.5]}
-//    println("A->B for p in "+slodi_AB.toString()) //A->B for p in {[0.17500000000000002,0.5]}
+    println("C->A for p in "+slodi_CA.toString()) //C->A for p in {[0.1875,0.5]}
+    println("A->B for p in "+slodi_AB.toString()) //A->B for p in {[0.17500000000000002,0.5]}
     println("B->A for p in "+slodi_BA.toString())   //B->A for p in {[0.1,0.125]}
     //^for dir1=0,or1=-1
     println("A->C for p in "+slodi_AC.toString())   //A->C for p in {} ... jeste delsi cas?
@@ -337,9 +337,10 @@ fun caseStudySEIR_SimpleNormReachability(){
     //compute reachability
     
     var delta1 : Double = 0.1
-    var delta2 : Double = 0.05
+    var delta2 : Double = 0.01 // 0.05 for init=4005
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
-    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemSEIR1par, arrayOf(4,0,0,5), /*0,0,*/3,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemSEIR1par, arrayOf(9,0,0,0), /*0,0,*/3,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    //var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromA( pmin, pmax, systemSEIR1par, arrayOf(4,0,0,5), /*0,0,*/3,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
 }
 //?zkouset? init 8010 3,-1 with combined timeout reach A,B
@@ -363,6 +364,22 @@ fun caseStudyRepressilator3D(){
     
     var delta1 : Double = 0.01
     var delta2 : Double = 0.01
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemRep3d1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
+    println( slodi )
+}
+
+//the same case study as caseStudyRepressilator3D, but PWMA with added treshold x=7.5 and 
+//added approximated hill value at x=7.5, hill=0.11
+fun caseStudyRepressilator3DPlusXtres(){
+    val systemRep3d1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002aREPRES3DPlusXtres")
+    val constraintr : ConstraintReachable = ConstraintReachable( 0, true, 7.5 )//>=7.5
+    val pmin : Double = 0.1 //-5.0 /*-1.0*/ //0.0 //0.1
+    val pmax : Double = 0.15 //-1.0 /*3.0*/  //3.0 //1.0
+    //compute reachability  //TODO s mensim delta1
+    
+    var delta1 : Double = 0.001
+    var delta2 : Double = 0.001
     //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
     var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemRep3d1par, arrayOf(2,1,1), 0,-1, listOf<ConstraintReachable>( constraintr), delta1, delta2 )
     println( slodi )
@@ -465,6 +482,36 @@ fun caseStudyRepressilator3D(){
     println( slodi )
 }
 
+
+ fun caseStudyRepressilator5DVerySimpleUntrivialParset(){
+    val systemRepres5d1par : BioSystemPWMA = getBioSystemPWMAByName("CASE002bREPRES5DVerySimple")
+    
+    val pmin : Double = 0.0
+    val pmax : Double = 0.5
+    //compute reachability
+    
+    var delta1 : Double = 0.01
+    var delta2 : Double = 0.01
+    
+    val constraint2221x : List<ConstraintReachable> = listOf<ConstraintReachable>( 
+                                ConstraintReachable( 0, true, systemRepres5d1par.getTres(0, 2 ).toDouble() ), //to be sure of the same values
+                                ConstraintReachable( 1, true, systemRepres5d1par.getTres(1, 2 ).toDouble() ), //use the precise formulation of value
+                                ConstraintReachable( 2, true, systemRepres5d1par.getTres(2, 2 ).toDouble() ), //from impl of ConstraintReachable
+                                ConstraintReachable( 3, true, systemRepres5d1par.getTres(3, 1 ).toDouble() ) )
+    
+    //above is reachable?? for which pars??
+    //constraint2 means the corner opposite to 00000 (state 22222)
+    
+    
+    //begin on facet r=0, 0<ei<epsilon, max-epsilon<s<max
+    //00000 - a corner
+    //(11111 - the centre)
+    //22222 - the opposite corner
+
+    var slodi : SortedListOfDisjunctIntervalsDouble = findParamValuesForReachabilityOfBFromAforPWMA( pmin, pmax, systemRepres5d1par, arrayOf(0,0,0,0,0), 0,-1, constraint2221x, delta1, delta2 )
+    println( slodi )
+}
+
 fun main(args: Array<String>) {
     
 //done    exampleLVP()
@@ -475,9 +522,10 @@ fun main(args: Array<String>) {
 
 //done    caseStudyLVPPSquared_sampling()
 //co neslo v caseStudyLVPPSquared_sampling pomoci FA, tu s QDA:
+//jeste s casy 10 10 30 40 jako pq 
 //done    caseStudyLVPPSquared_QDA()
 
-//done    caseStudyLVPQ()
+//    caseStudyLVPQ()
 
     //nedojelo do konce jen s FA
     //30.3.2022 jet s timetoutem FA->QDA: Result {[0.133984375,0.2],[0.21274414062500002,0.30000000000000004],[0.30625,0.5]}
@@ -492,7 +540,9 @@ fun main(args: Array<String>) {
     //28.3.2022 - seir jeste pojede, ted zkusime neco mensiho hybridne s pythonem... prijde zrychleni?
     //29.3.2022 - now try combined seir, timeout is 1min... yes
     //init different from 90000... (init=40005 nedojelo do asi tak 2 dni necelych, ani s QDA timeout)
-    caseStudySEIR_SimpleNormReachability()
+    //jede s initem=4005 a s delta2=0.05 a s heuristikou na invariantni sumu coordu stavu, dojel za skoro 2 dny
+    //original init=9000, delta2=0.01 with heuristics (because of computation time comparison with/without heur - longer with heur...)
+//done    caseStudySEIR_SimpleNormReachability()
     
     //28.3.2022 dobehlo rychle, ale zadani nebylo ok
     //29.3.2022 input interval [0,3] : Result of reach A,B: {[0.0,0.1]}
@@ -500,7 +550,11 @@ fun main(args: Array<String>) {
     //30.3.2022 jeste jednou [0,3] pro srovnani s above (mozna nebyly konstanty 0.1+produkcni pritomne) OK Result of reach A,B: {[0.0,0.1]}
     //1.4.2022 s [-5,-1] pro ohraniceni valid pars zleva cele valid
     //1.4.2022 s [0.1,0.15] s delta1=delta2=0.01 pro zaplneni mezery delky 0.1 ve vypoctu param[0,3] (s delta1=0.1) OK valid all
-//    caseStudyRepressilator3D()
+//done    caseStudyRepressilator3D()
+    //with added x=7.5 (this was added by Pithya, want a comparison on the same model / pro delta 0.01 zase stejny vysl REP3D_addX75.txt [0.1,0.15])
+    //jeste s 0.001 delta stejny vysledek [0.1,0.15]
+    //JEDE se SHARP PWMA a 0.001
+//done    caseStudyRepressilator3DPlusXtres()
     
     //30.3.2022 bezelo celou noc a stejne moc dlouha fronta, znova s mene tresholdy (4^5 nebo 6x6x6x6x6 misto 10x...)
     //caseStudyRepressilator5D()
@@ -508,8 +562,9 @@ fun main(args: Array<String>) {
     //30.3.2022 again with different init: 00000 for whole [0,3] is reachable 
     //31.3.2022 init A=00000  B=2xxxx with params in [-10,10] ... moc velky parset 
     //31.3.2022 init A=00000  B=2xxxx with params in [-5,0] ... all valid
-    //init A=00000 B=22222, params=< JET
-//    caseStudyRepressilator5DVerySimple()
+    //init A=00000 B=2221x, params=?, Pithya says [-10,0.249...] left bound is irrelevant (-\infty) < JEDE s admissible [-0.5,0.5]
+    //se SHARP PWMA
+//done    caseStudyRepressilator5DVerySimpleUntrivialParset()
 
     //30.3.2022 6x6x... tresholdy, init: 21111 runs more than 24h, ~5000 states, and increasing
 //too much tres    caseStudyRepressilator5DSimple()
@@ -517,7 +572,7 @@ fun main(args: Array<String>) {
 
     //31.3.2022 Brusselator try with only FA
     //runs with FA only, how would the result change with combined FA -timeout-> QDA and the same settings?
-    //31.3.2022 points CA XD JEDE with FA (with QDA timeout JET? z analyzy jestli je avg time na stav vetsi nez 1 min? jet a porovnat vysledky...)
+    //31.3.2022 points CA XD with FA nereach (with QDA timeout JET? z analyzy jestli je avg time na stav vetsi nez 1 min? jet a porovnat vysledky...)
 //    caseBRUSSELATORreachability_sampling()
 
     //bits and odds:
@@ -532,7 +587,20 @@ fun main(args: Array<String>) {
     //val polynoms : List<String> = listOf("x^2+1","x+1","x^3+x","0","p^2-p-2","2*x+1")
     
     //for( pol in polynoms )
-    //    println( getRoots( pol ) )//will print out the result
+/**/
+    val polCA = "0.75*((-8.042949022840241e-15))*(40.0*p*p-1.4)*(40.0*p*p-1.4)+0.75*(0.0)*(5.0*p-1.4999999999999998)*(5.0*p-1.4999999999999998)+0.75*(0+0.0)*(5.0*p-1.4999999999999998)*(40.0*p*p-1.4)+0.25*1.73205080756888*(0+0.0)*(5.0*p-1.4999999999999998)+0.25*1.73205080756888*(0+(-2.563950248511606e-15))*(40.0*p*p-1.4)+0.25*(4.000000000000052)-1.0"
+    val polAB = "0.75*(3.478698810492165e-15)*(40.0*p*p-1.4)*(40.0*p*p-1.4)+0.75*(7.244237072457574e-45)*(5.0*p-1.4999999999999998)*(5.0*p-1.4999999999999998)+0.75*(0+6.319236576629892e-30)*(5.0*p-1.4999999999999998)*(40.0*p*p-1.4)+0.25*1.73205080756888*(0+(-4.378095526308221e-30))*(5.0*p-1.4999999999999998)+0.25*1.73205080756888*(0+(-8.973825869790225e-15))*(40.0*p*p-1.4)+0.25*(4.00000000000006)-1.0"
+    val polBA = "0.75*(0.04105090316463364)*(40.0*p*p-1.4)*(40.0*p*p-1.4)+0.75*(0.7819219641977574)*(5.0*p-1.4999999999999998)*(5.0*p-1.4999999999999998)+0.75*(0+(-0.3583809004535952))*(5.0*p-1.4999999999999998)*(40.0*p*p-1.4)+0.25*1.73205080756888*(0+(-1.029289712761777))*(5.0*p-1.4999999999999998)+0.25*1.73205080756888*(0+0.2358788926375568)*(40.0*p*p-1.4)+0.25*(0.3387285948311652)-1.0"
+    val polAC = "0.75*(0.0301522689596759)*(40.0*p*p-1.4)*(40.0*p*p-1.4)+0.75*(0.7538067239578337)*(5.0*p-1.4999999999999998)*(5.0*p-1.4999999999999998)+0.75*(0+(-0.3015226895861085))*(5.0*p-1.4999999999999998)*(40.0*p*p-1.4)+0.25*1.73205080756888*(0+(-0.9139420814812506))*(5.0*p-1.4999999999999998)+0.25*1.73205080756888*(0+0.1827884162985326)*(40.0*p*p-1.4)+0.25*(0.2767978290341266)-1.0"
+    println( "CA" )
+    println( getRoots( polCA ) )//will print out the result
+    println( "AB" )
+    println( getRoots( polAB ) )//will print out the result
+    println( "BA" )
+    println( getRoots( polBA ) )//will print out the result
+    println( "AC" )
+    println( getRoots( polAC ) )//will print out the result
+/**/
         
 //    var examplesStrs = arrayOf("001sys","002sys","003LV","004POL","005ROS")
 //    var numero = 1

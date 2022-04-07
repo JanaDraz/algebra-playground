@@ -454,6 +454,7 @@ fun findParamValuesForReachabilityOfBFromAforPWMA( pmin : Double, pmax : Double,
                     their parameters are intersection of state pars with transition pars
                     otherwise union their params with actual result
                     */
+                    //HERE SET "SHARP" OR "" TO DIFFERENTIATE CONTACT ON FACET AND INSIDE RECTANGLE
                     if( intersectionNonemptyListOfConstraintsPWMA( succState, constraintsB, biosystem ) ){
                         result.uniteWithOtherDisjunctList( succParset )
                         println("Uniting result with "+succParset.toString())

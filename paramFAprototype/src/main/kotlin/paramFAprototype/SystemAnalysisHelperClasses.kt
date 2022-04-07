@@ -358,6 +358,17 @@ class ConstraintReachable( variable : Int, ge : Boolean, value : Double ) {
             return lower < value //contact inside rectangle
         }
     }
+    
+    fun hasSharpIntersectionWith( state : Array<Int>, biosystem : BioSystemPWMA ) : Boolean {
+        val lower : Double = biosystem.getTres(variable, state[variable] ).toDouble()
+        val upper : Double = biosystem.getTres(variable, state[variable] + 1).toDouble()
+        
+        if( ge ){
+            return upper > value //contact inside rectangle
+        } else {
+            return lower < value //contact inside rectangle
+        }
+    }
 }
 
 fun intersectionNonemptyListOfConstraints( stateA : Array<Int>, constraintsB : List<ConstraintReachable>, biosystem : BioSystem ) : Boolean {
@@ -372,6 +383,14 @@ fun intersectionNonemptyListOfConstraintsPWMA( stateA : Array<Int>, constraintsB
     var result : Boolean = true
     for( constraint in constraintsB ){
         result = result && constraint.hasIntersectionWith( stateA, biosystem )
+    }
+    return result
+}
+
+fun sharpIntersectionNonemptyListOfConstraintsPWMA( stateA : Array<Int>, constraintsB : List<ConstraintReachable>, biosystem : BioSystemPWMA ) : Boolean {
+    var result : Boolean = true
+    for( constraint in constraintsB ){
+        result = result && constraint.hasSharpIntersectionWith( stateA, biosystem )
     }
     return result
 }
